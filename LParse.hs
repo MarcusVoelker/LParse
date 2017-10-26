@@ -1,6 +1,5 @@
 module LParse where
 
-
 import Continuations
 
 import Control.Applicative
