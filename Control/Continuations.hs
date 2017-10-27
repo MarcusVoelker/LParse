@@ -1,4 +1,4 @@
-module Continuations where 
+module Control.Continuations where 
 
 import Control.Applicative
 import Control.Monad

@@ -1,7 +1,6 @@
-module LParse where
+module Text.LParse.Parser where
 
-
-import Continuations
+import Control.Continuations
 
 import Control.Applicative
 import Control.Monad
@@ -28,7 +27,7 @@ instance Monad (Parser r t) where
 a << b = a >>= ((b >>) . return)
 
 parse :: Parser r t a -> [t] -> (a -> r) -> (String -> r) -> r
-parse p s btr = run (pFunc p s) (btr . fst)
+parse p s = run (pFunc p s) . (. fst)
 
 debugParse :: (Show a) => Parser (IO ()) t a -> [t] -> IO ()
 debugParse p s = run (pFunc p s) (putStr . (\x -> show (fst x) ++ "\n")) (\e -> putStr ("Error: "++ e ++ "\n"))
@@ -41,18 +40,6 @@ cParse c p err = Parser (\s -> if c s then pFunc p s else throw err)
 
 pParse :: ([t] -> [t]) -> Parser r t a -> Parser r t a
 pParse f p = Parser (pFunc p . f)
-
-noopParse :: Parser r t ()
-noopParse = Parser (\s -> DCont (\btr _ -> btr ((),s)))
-
-tokenParse :: (t -> a) -> Parser r t a
-tokenParse f = Parser (\s -> DCont (\btr etr -> if null s then etr "Unexpected EOI" else btr (f $ head s,tail s)))
-
-consume :: (Eq t, Show t) => [t] -> Parser r t ()
-consume pre = cParse (all id . zipWith (==) pre) (pParse (drop (length pre)) noopParse) ("Expected " ++ show pre)
-
-consumeSingle :: (Eq t, Show t) => t -> Parser r t ()
-consumeSingle t = cParse (\s -> not (null s) && head s == t) (pParse tail noopParse) ("Expected " ++ show t)
 
 sepSome :: Parser r t () -> Parser r t a -> Parser r t [a]
 sepSome sep p = ((:) <$> p <*> many (sep >> p)) <|> fmap return p <|> return []
