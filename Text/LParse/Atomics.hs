@@ -16,6 +16,9 @@ full = many tokenReturn
 discard :: Parser r t ()
 discard = full >> noop
 
+eoi :: Parser r t ()
+eoi = cParse null noop ("Input not fully consumed")
+
 tokenParse :: (t -> a) -> Parser r t a
 tokenParse f = Parser (\s -> DCont (\btr etr -> if null s then etr "Unexpected EOI" else btr (f $ head s,tail s)))
 

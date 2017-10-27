@@ -26,6 +26,9 @@ instance Monad (Parser r t) where
 parse :: Parser r t a -> [t] -> (a -> r) -> (String -> r) -> r
 parse p s = run (pFunc p s) . (. fst)
 
+doParse :: Parser (Either String a) t a -> [t] -> Either String a
+doParse p s = invoke (fst <$> pFunc p s)
+
 debugParse :: (Show a) => Parser (IO ()) t a -> [t] -> IO ()
 debugParse p s = debugParse' p s (putStr . (\x -> show x ++ "\n"))
 
