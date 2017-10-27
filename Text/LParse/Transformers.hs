@@ -15,4 +15,13 @@ pParse :: ([t] -> [t]) -> Parser r t a -> Parser r t a
 pParse f p = Parser (pFunc p . f)
 
 sepSome :: Parser r t () -> Parser r t a -> Parser r t [a]
-sepSome sep p = ((:) <$> p <*> many (sep >> p)) <|> fmap return p <|> return []
+sepSome sep p = ((:) <$> p <*> many (sep >> p)) <|> fmap return p
+
+sepMany :: Parser r t () -> Parser r t a -> Parser r t [a]
+sepMany sep p = sepSome sep p <|> return []
+
+skip :: (Eq t) => [t] -> Parser r t a -> Parser r t a
+skip s = pParse (filter (not . (`elem` s)))
+
+skipWhitespace :: Parser r Char a -> Parser r Char a
+skipWhitespace = skip " \n\r\t"

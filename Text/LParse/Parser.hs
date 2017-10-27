@@ -27,7 +27,7 @@ parse :: Parser r t a -> [t] -> (a -> r) -> (String -> r) -> r
 parse p s = run (pFunc p s) . (. fst)
 
 debugParse :: (Show a) => Parser (IO ()) t a -> [t] -> IO ()
-debugParse p s = run (pFunc p s) (putStr . (\x -> show (fst x) ++ "\n")) (\e -> putStr ("Error: "++ e ++ "\n"))
+debugParse p s = debugParse' p s (putStr . (\x -> show x ++ "\n"))
 
 debugParse' :: (Show a) => Parser (IO ()) t a -> [t] -> (a -> IO()) ->  IO ()
 debugParse' p s a = run (pFunc p s) (a . fst) (\e -> putStr ("Error: "++ e ++ "\n"))
