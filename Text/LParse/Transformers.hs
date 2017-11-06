@@ -25,3 +25,6 @@ skip s = pParse (filter (not . (`elem` s)))
 
 skipWhitespace :: Parser r String a -> Parser r String a
 skipWhitespace = skip " \n\r\t"
+
+replace :: (t -> t) -> Parser r [t] a -> Parser r [t] a
+replace f p = Parser (pFunc p . (\(x:xs) -> f x:xs))
