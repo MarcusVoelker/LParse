@@ -1,7 +1,7 @@
 module Main where 
 
-import System.Exit (exitFailure)
+import System.Exit (exitSuccess)
 
 main = do
-    putStrLn "OH GOD ERRORS"
-    exitFailure
+    putStrLn "Hier entsteht eine neue Testpräsenz"
+    exitSuccess
