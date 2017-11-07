@@ -25,6 +25,10 @@ instance Monad (Parser r t) where
     return a = Parser (\s -> return (a,s))
     a >>= f = Parser (pFunc a >=> (\(r, s') -> pFunc (f r) s'))
 
+instance MonadPlus (Parser r t) where
+    mzero = empty
+    mplus = (<|>)
+
 instance C.Category (Parser r) where
     id = Parser (\s -> return (s,s))
     (.) b a = Parser (\s -> DCont (\btr etr -> run (pFunc a s) (\(x,r) -> run (pFunc b x) (\(y,_) -> btr (y,r)) etr) etr))
