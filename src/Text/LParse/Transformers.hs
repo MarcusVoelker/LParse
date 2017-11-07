@@ -1,6 +1,6 @@
 module Text.LParse.Transformers where 
 
-import Control.Continuations
+import Control.DoubleContinuations
 import Text.LParse.Parser
 
 import Control.Applicative

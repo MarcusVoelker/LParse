@@ -1,6 +1,6 @@
 module Text.LParse.Parser where
 
-import Control.Continuations
+import Control.DoubleContinuations
 
 import Control.Applicative
 import Control.Monad

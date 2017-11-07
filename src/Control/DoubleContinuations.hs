@@ -1,5 +1,5 @@
 {-|
-Module      : Control.Continuations 
+Module      : Control.DoubleContinuations 
 Description : Continuations that can succeed or fail
 Copyright   : (c) Marcus Völker, 2017
 License     : MIT
@@ -10,7 +10,7 @@ Instead of just taking a single function (a -> r) -> r to execute after the comp
 a double continuation takes two functions: one to call in case of success and one to call in case of error
 This allows for easy implementation of exception handling and structuring control flow in a pass/fail manner
 -}
-module Control.Continuations where 
+module Control.DoubleContinuations where 
 
 import Control.Applicative
 import Control.Monad

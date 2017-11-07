@@ -1,6 +1,6 @@
 module Text.LParse.Atomics where 
 
-import Control.Continuations
+import Control.DoubleContinuations
 
 import Control.Applicative
 import Data.Char
