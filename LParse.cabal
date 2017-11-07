@@ -22,3 +22,9 @@ library
 source-repository head
   type:     git
   location: https://github.com/MarcusVoelker/LParse
+
+test-suite test-lparse
+  type:     exitcode-stdio-1.0
+  main-is:  test/Test.hs
+  build-depends:  base
+  default-language: Haskell2010
