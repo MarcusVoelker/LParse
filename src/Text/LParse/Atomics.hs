@@ -56,3 +56,8 @@ word = some (cParse (\s -> not (null s) && isLetter (head s)) tokenReturn "Expec
 -- | Extracts the first integer (i.e. contiguous string of digits) from the input and returns it
 integer :: Parser r String Integer
 integer = read <$> some (cParse (\s -> not (null s) && isDigit (head s)) tokenReturn "Expected digit")
+
+
+-- | Succeeds if the first token matches the given function, without consuming it
+peek :: (t -> Bool) -> String -> Parser r [t] ()
+peek c = cParse (c . head) noop

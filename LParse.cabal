@@ -1,5 +1,5 @@
 name:                LParse
-version:             0.1.1.1
+version:             0.1.2.0
 synopsis:            A continuation-based parser library
 description:         A parser library using continuations with a possibility for failure to build parsers in a clear and concise manner.
 homepage:            https://github.com/MarcusVoelker/LParse#readme
@@ -10,7 +10,7 @@ maintainer:          marcus.voelker@rwth-aachen.de
 copyright:           (c) 2017 Marcus Völker
 category:            Parsing
 build-type:          Simple
-extra-source-files:  README.md
+extra-source-files:  README.md CHANGELOG.md
 cabal-version:       >=1.10
 
 library
