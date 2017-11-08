@@ -12,6 +12,7 @@ module Text.LParse.Atomics where
 import Control.DoubleContinuations
 
 import Control.Applicative
+import Control.Monad
 import Data.Char
 import Text.LParse.Parser
 import Text.LParse.Transformers
