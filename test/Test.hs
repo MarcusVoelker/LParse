@@ -1,7 +1,26 @@
 module Main where 
 
-import System.Exit (exitSuccess)
+import Text.LParse.Parser
+import Text.LParse.Atomics
+import Text.LParse.Transformers
 
-main = do
-    putStrLn "Hier entsteht eine neue Testpräsenz"
-    exitSuccess
+import Control.Monad
+import Data.Either
+import Data.List
+import Data.Maybe
+import System.Exit (exitSuccess,exitFailure)
+
+succCases = [
+    (noop,""),
+    (eoi,""),
+    (discard,"lel"),
+    ((discard >> eoi),"lorem ipsum"),
+    ((consume "prefix"),"prefixed")
+    ]
+
+main = 
+    let res = map (uncurry doParse) succCases in
+    if all isRight res then
+        exitSuccess
+    else
+        putStrLn (head $ lefts res) >> exitFailure
