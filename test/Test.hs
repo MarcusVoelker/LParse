@@ -43,20 +43,18 @@ runTests = map (uncurry doParse)
 
 eqTest (p,i,e) = parse p i (\r -> if r == e then Right () else Left ("Expected " ++ show e ++ ", but got " ++ show r)) (const $ Left "Parser error")
 
-main = 
-    let sres = runTests succCases in
-    let fres = runTests failCases in
-    let seres = map eqTest stringCases in
-    let ieres = map eqTest intCases in
-    if all isRight sres && all isLeft fres && all isRight seres && all isRight ieres then
-        exitSuccess
-    else if any isLeft sres then
-        putStrLn (head $ lefts sres) >> exitFailure
-    else if any isRight fres then
-        putStrLn "Fail case succeeded" >> exitFailure
-    else if any isLeft seres then
-        putStrLn (head $ lefts seres) >> exitFailure
-    else if any isLeft ieres then
-        putStrLn (head $ lefts ieres) >> exitFailure
-    else
-        putStrLn "Unknown internal error" >> exitFailure
+succTest res = if all isRight res then return () else putStrLn (head $ lefts res) >> exitFailure
+
+failTest res = if all isLeft res then return () else putStrLn "Fail Test Succeeded" >> exitFailure
+
+
+main = do
+    let sres = runTests succCases
+    let fres = runTests failCases
+    let seres = map eqTest stringCases
+    let ieres = map eqTest intCases
+    succTest sres
+    failTest fres
+    succTest seres
+    succTest ieres
+    exitSuccess
