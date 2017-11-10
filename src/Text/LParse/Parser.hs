@@ -59,6 +59,10 @@ instance Arrow (Parser r) where
     arr f = Parser (\s -> return (f s, undefined))
     (***) p1 p2 = Parser (\(a,b) -> DCont (\btr etr -> run (pFunc p1 a) (\(a',ra) -> run (pFunc p2 b) (\(b',rb) -> btr ((a',b'),(ra,rb))) etr) etr))
 
+-- | Runs the parser on the tokens and returns whether the parse succeeded. Results are discarded.
+check :: Parser Bool t a -> t -> Bool
+check p s = parse p s (const True) (const False)
+
 -- | Runs the parser on the tokens, using two functions to run the contained continuation
 parse :: Parser r t a -> t -> (a -> r) -> (String -> r) -> r
 parse p s = run (pFunc p s) . (. fst)
