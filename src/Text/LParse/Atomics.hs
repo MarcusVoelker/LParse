@@ -49,14 +49,21 @@ consume pre = cParse ((&&) <$> (all id . zipWith (==) pre) <*> ((>= length pre) 
 consumeSingle :: (Eq t, Show t) => t -> Parser r [t] ()
 consumeSingle t = cParse (\s -> not (null s) && head s == t) (pParse tail noop) ("Expected " ++ show t)
 
+-- | Extracts the first digit and returns it
+digit :: Parser r String Integer
+digit = read . return <$> cParse (\s -> not (null s) && isDigit (head s)) tokenReturn "Expected digit"
+
+-- | Extracts the first digit and returns it
+letter :: Parser r String Char
+letter = cParse (\s -> not (null s) && isLetter (head s)) tokenReturn "Expected letter"
+
 -- | Extracts the first word (i.e. contiguous string of letters) from the input and returns it
 word :: Parser r String String
-word = some (cParse (\s -> not (null s) && isLetter (head s)) tokenReturn "Expected letter")
+word = some letter 
 
 -- | Extracts the first integer (i.e. contiguous string of digits) from the input and returns it
 integer :: Parser r String Integer
-integer = read <$> some (cParse (\s -> not (null s) && isDigit (head s)) tokenReturn "Expected digit")
-
+integer = foldl (\x y -> x*10+y) 0 <$> some digit
 
 -- | Succeeds if the first token matches the given function, without consuming it
 peek :: (t -> Bool) -> String -> Parser r [t] ()
