@@ -20,6 +20,8 @@ succCases = [
     (consume "prefix","prefixed"),
     (consume "", "foo"),
     (consume "", ""),
+    (letter >> eoi, "b"),
+    (digit >> eoi, "4"),
     (word >> eoi, "banana")
     ]
 
@@ -28,6 +30,8 @@ failCases = [
     (eoi,"foo"),
     (consume "prefix", "freepix"),
     (consume "prefix", ""),
+    (letter >> eoi, "banana"),
+    (digit >> eoi, "42"),
     (word >> eoi, "banana bread")
     ]
 
@@ -39,6 +43,7 @@ stringCases = [
 intCases :: [(Parser r String Integer, String, Integer)]
 intCases = [
     (integer,"123 is a nice number",123),
+    (digit,"123 is a nice number",1),
     (sum <$> sepMany (consume " ") integer,"1 4 12 61 192",1+4+12+61+192)
     ]
 
