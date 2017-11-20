@@ -12,6 +12,8 @@ module Text.LParse.TokenStream where
 import Data.Maybe
 import Data.Traversable
 
+{-# DEPRECATED skipN "Use sDrop in place of skipN" #-}
+
 -- | `TokenStream` abstracts a list, i.e., something that has a next element to process and a rest afterwards
 class (Functor t, Foldable t) => TokenStream t where
     -- | `top` gives the next element to process. Similar to `head`
@@ -35,10 +37,14 @@ instance TokenStream Maybe where
     nil = Nothing
     cons a _ = Just a
 
--- | `TokenStream` version of `drop` 
+-- | Deprecated version of `sDrop`
 skipN :: (TokenStream s) => Int -> s a -> s a
-skipN 0 x = x
-skipN n x = rest $ skipN (n-1) x
+skipN = sDrop 
+
+-- | `TokenStream` version of `drop` 
+sDrop ::  (TokenStream s) => Int -> s a -> s a
+sDrop 0 x = x
+sDrop n x = rest $ sDrop (n-1) x
 
 -- | `TokenStream` version of `zip`
 sZip :: (TokenStream s) => s a -> s b -> s (a,b)
