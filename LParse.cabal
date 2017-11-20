@@ -1,5 +1,5 @@
 name:                LParse
-version:             0.1.4.1
+version:             0.2.0.0
 synopsis:            A continuation-based parser library
 description:         A parser library using continuations with a possibility for failure to build parsers in a clear and concise manner.
 homepage:            https://github.com/MarcusVoelker/LParse#readme
@@ -15,7 +15,7 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Control.DoubleContinuations Text.LParse.Atomics, Text.LParse.Parser, Text.LParse.Transformers
+  exposed-modules:     Control.DoubleContinuations Text.LParse.Atomics, Text.LParse.Parser, Text.LParse.Transformers, Text.LParse.TokenStream
   build-depends:       base >= 4.7 && < 5
   default-language:    Haskell2010
 
