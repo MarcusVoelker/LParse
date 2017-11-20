@@ -11,6 +11,7 @@ module Text.LParse.Transformers where
 
 import Control.DoubleContinuations
 import Text.LParse.Parser
+import Text.LParse.TokenStream
 
 import Control.Applicative
 import Data.Char
@@ -37,17 +38,17 @@ sepMany :: Parser r t () -> Parser r t a -> Parser r t [a]
 sepMany sep p = sepSome sep p <|> return []
 
 -- | Removes all tokens from the given list from the input
-skip :: (Eq t) => [t] -> Parser r [t] a -> Parser r [t] a
+skip :: (Eq t, TokenStream s) => [t] -> Parser r (s t) a -> Parser r (s t) a
 skip s = skipBy (not . (`elem` s))
 
 -- | Same as skip, but with a custom comparator
-skipBy :: (t -> Bool) -> Parser r [t] a -> Parser r [t] a
-skipBy f = pParse (filter f)
+skipBy :: (TokenStream s) => (t -> Bool) -> Parser r (s t) a -> Parser r (s t) a
+skipBy f = pParse (sFilter f)
 
 -- | Skips standard whitespace characters from a String input
 skipWhitespace :: Parser r String a -> Parser r String a
 skipWhitespace = skipBy (not . isSpace)
 
 -- | Replaces the first token by applying the given function
-replace :: (t -> t) -> Parser r [t] a -> Parser r [t] a
-replace f p = Parser (pFunc p . (\(x:xs) -> f x:xs))
+replace :: (TokenStream s) => (t -> t) -> Parser r (s t) a -> Parser r (s t) a
+replace f p = Parser (pFunc p . (\x -> f (top x) `cons` rest x))
