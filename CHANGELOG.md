@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.0
+
+### 0.2.0.0
+
+* Added `TokenStream`, an abstraction of lists
+* Used `TokenStream` to reformulate Atomics and Transformers
+
 ## 0.1.4
 
 ### 0.1.4.0
