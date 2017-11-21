@@ -11,6 +11,15 @@ import Data.List
 import Data.Maybe
 import System.Exit (exitSuccess,exitFailure)
 
+bracks :: Parser r String ()
+bracks = (consume "(" >> nesting << consume ")")
+    <|> (consume "[" >> nesting << consume "]")
+    <|> (consume "{" >> nesting << consume "}")
+    <|> (consume "<" >> nesting << consume ">")
+
+nesting :: Parser r String ()
+nesting = void $ many bracks
+
 succCases :: [(Parser r String (),String)]
 succCases = [
     (noop,""),
@@ -22,7 +31,8 @@ succCases = [
     (consume "", ""),
     (letter >> eoi, "b"),
     (digit >> eoi, "4"),
-    (word >> eoi, "banana")
+    (word >> eoi, "banana"),
+    (nesting >> eoi, "({()}[])")
     ]
 
 failCases :: [(Parser r String (),String)]
@@ -32,7 +42,8 @@ failCases = [
     (consume "prefix", ""),
     (letter >> eoi, "banana"),
     (digit >> eoi, "42"),
-    (word >> eoi, "banana bread")
+    (word >> eoi, "banana bread"),
+    (nesting >> eoi, "({(})[])")
     ]
 
 stringCases :: [(Parser r String String, String, String)]
