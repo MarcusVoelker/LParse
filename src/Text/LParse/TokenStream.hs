@@ -9,6 +9,7 @@ This module contains the `TokenStream` class, an abstraction of lists, similar t
 -}
 module Text.LParse.TokenStream where 
 
+import Data.Either
 import Data.Maybe
 import Data.Traversable
 
@@ -36,6 +37,12 @@ instance TokenStream Maybe where
     rest = const Nothing
     nil = Nothing
     cons a _ = Just a
+
+instance TokenStream (Either a) where
+    top = head . rights . return
+    rest x = if isLeft x then x else nil
+    nil = Left undefined
+    cons a _ = Right a
 
 -- | Deprecated version of `sDrop`
 skipN :: (TokenStream s) => Int -> s a -> s a
