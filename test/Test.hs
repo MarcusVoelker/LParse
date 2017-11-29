@@ -49,7 +49,8 @@ failCases = [
 
 stringCases :: [(Parser r String String, String, String)]
 stringCases = [
-    (word,"sufficient example","sufficient")
+    (word,"sufficient example","sufficient"),
+    (integer >>> (show <$> bDigits 2), "19", "[1,1,0,0,1]")
     ]
 
 intCases :: [(Parser r String Integer, String, Integer)]
