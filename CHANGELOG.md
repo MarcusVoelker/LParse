@@ -9,6 +9,7 @@ Highlights:
 ### 0.2.2
 
 * Added Either instance for `TokenStream`
+* Auto-`success` atomic, atomics for splitting an integer into digits
 
 ### 0.2.1
 
