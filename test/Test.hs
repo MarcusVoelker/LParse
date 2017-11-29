@@ -5,6 +5,7 @@ import Text.LParse.Atomics
 import Text.LParse.Transformers
 
 import Control.Applicative
+import Control.Arrow
 import Control.Monad
 import Data.Either
 import Data.List
@@ -55,7 +56,9 @@ intCases :: [(Parser r String Integer, String, Integer)]
 intCases = [
     (integer,"123 is a nice number",123),
     (digit,"123 is a nice number",1),
-    (sum <$> sepMany (consume " ") integer,"1 4 12 61 192",1+4+12+61+192)
+    (sum <$> sepMany (consume " ") integer,"1 4 12 61 192",1+4+12+61+192),
+    (integer >>> (sum <$> bDigits 2), "19", 3),
+    (integer >>> (foldr (\x y -> x + y * 2) 0 <$> bDigits 2), "19", 19)
     ]
 
 runTests :: [(Parser (Either String a) t a,t)] -> [Either String a]
