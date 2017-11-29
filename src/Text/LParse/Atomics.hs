@@ -69,3 +69,15 @@ integer = foldl (\x y -> x*10+y) 0 <$> some digit
 -- | Succeeds if the first token matches the given function, without consuming it
 peek :: (TokenStream s) => (t -> Bool) -> String -> Parser r (s t) ()
 peek c = cParse (c . top) noop
+
+-- | A parser that always succeeds with the given function
+success :: (t -> (a,t)) -> Parser r t a
+success = Parser . (return .)
+
+-- | Parses an integer by removing a single digit in the given base from it. Zero is considered to have no digits
+bDigit :: Integer -> Parser r Integer Integer
+bDigit b = cParse (> 0) (success (\i -> (i `mod` b,i `div` b))) "Empty number!"
+
+-- | Parses an integer by removing a single digit in the given base from it. Zero is considered to have no digits
+bDigits :: Integer -> Parser r Integer [Integer]
+bDigits b = many $ bDigit b
