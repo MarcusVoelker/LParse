@@ -66,6 +66,10 @@ word = some letter
 integer :: Parser r String Integer
 integer = foldl (\x y -> x*10+y) 0 <$> some digit
 
+-- | Extracts the first signed integer (i.e. contiguous string of digits) from the input and returns it
+sInteger :: Parser r String Integer
+sInteger = (\m i -> case m of (Just _) -> -i; Nothing -> i) <$> try (consumeSingle '-') <*> integer
+
 -- | Succeeds if the first token matches the given function, without consuming it
 peek :: (TokenStream s) => (t -> Bool) -> String -> Parser r (s t) ()
 peek c = cParse (c . top) noop

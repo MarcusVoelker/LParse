@@ -24,6 +24,10 @@ a << b = a >>= ((b >>) . return)
 cParse :: (t -> Bool) -> Parser r t a -> String -> Parser r t a
 cParse c p err = Parser (\s -> if c s then pFunc p s else throw err)
 
+-- | Takes a condition the next token has to fulfil in order for the parser to succeed
+nParse :: (TokenStream s, Eq (s t)) => (t -> Bool) -> Parser r (s t) a -> String -> Parser r (s t) a
+nParse c p err = cParse (\s -> not (nil == s) && c (top s)) p err
+
 -- | Transforms the input before applying the parser
 pParse :: (t -> t) -> Parser r t a -> Parser r t a
 pParse f p = Parser (pFunc p . f)
@@ -52,3 +56,7 @@ skipWhitespace = skipBy (not . isSpace)
 -- | Replaces the first token by applying the given function
 replace :: (TokenStream s) => (t -> t) -> Parser r (s t) a -> Parser r (s t) a
 replace f p = Parser (pFunc p . (\x -> f (top x) `cons` rest x))
+
+-- | Tries to run the given parser, giving back Just result or Nothing
+try :: (TokenStream s) => Parser r (s t) a -> Parser r (s t) (Maybe a)
+try p = (Just <$> p) <|> return Nothing
