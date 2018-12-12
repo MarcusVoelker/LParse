@@ -6,6 +6,10 @@ Highlights:
 
 * Switching from list-based parsing to `TokenStream`
 
+### 0.2.3
+
+* Added `nParse` (cParse for single token) and `try` (parse with Maybe) Transformers, `sInteger` (signed integers) Atomic
+
 ### 0.2.2
 
 * Added Either instance for `TokenStream`
