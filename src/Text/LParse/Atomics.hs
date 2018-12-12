@@ -32,7 +32,7 @@ discard = void full
 
 -- | A parser that parses nothing, but only succeeds if the input is empty
 eoi :: Parser r [t] ()
-eoi = cParse null noop ("Input not fully consumed")
+eoi = cParse null noop "Input not fully consumed"
 
 -- | Extracts the first token from the input and applies the given function to it
 tokenParse :: (TokenStream s) => (t -> a) -> Parser r (s t) a
@@ -43,8 +43,8 @@ tokenReturn :: (TokenStream s) => Parser r (s a) a
 tokenReturn = tokenParse id
 
 -- | Succeeds exactly if the input begins with the given sequence. On success, consumes that sequence
-consume :: (Eq t, Show (s t), TokenStream s) => (s t) -> Parser r (s t) ()
-consume pre = cParse ((&&) <$> (all id . sZipWith (==) pre) <*> ((>= length pre) . length)) (pParse (sDrop (length pre)) noop) ("Expected " ++ show pre)
+consume :: (Eq t, Show (s t), TokenStream s) => s t -> Parser r (s t) ()
+consume pre = cParse ((&&) <$> (and . sZipWith (==) pre) <*> ((>= length pre) . length)) (pParse (sDrop (length pre)) noop) ("Expected " ++ show pre)
 
 -- | Succeeds exactly if the input begins with the given token. On success, consumes that token
 consumeSingle :: (Eq t, Show t, TokenStream s) => t -> Parser r (s t) ()

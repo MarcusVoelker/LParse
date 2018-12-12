@@ -60,10 +60,10 @@ sZip = sZipWith (,)
 -- | `TokenStream` version of `zipWith`
 sZipWith :: (TokenStream s) => (a -> b -> c) -> s a -> s b -> s c
 sZipWith f l r | null l || null r = nil
-               | otherwise      = f (top l) (top r) `cons` (sZipWith f (rest l) (rest r))
+               | otherwise      = f (top l) (top r) `cons` sZipWith f (rest l) (rest r)
 
 -- | `TokenStream` version of `filter`
 sFilter :: (TokenStream s) => (a -> Bool) -> s a -> s a
 sFilter c x | null x = nil
-            | c (top x) = (top x) `cons` sFilter c (rest x)
+            | c (top x) = top x `cons` sFilter c (rest x)
             | otherwise = sFilter c (rest x)

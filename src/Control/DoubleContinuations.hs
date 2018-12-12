@@ -44,5 +44,5 @@ instance Alternative (DCont r e) where
     p1 <|> p2 = DCont (\atr etr -> run p1 atr (\_ -> run p2 atr etr))
 
 -- | Convenience function to run a computation and put the result into an Either (with Left being the error and Right being the success)
-invoke :: DCont (Either e a) e a -> (Either e a)
+invoke :: DCont (Either e a) e a -> Either e a
 invoke c = run c Right Left

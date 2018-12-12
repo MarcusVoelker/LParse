@@ -34,7 +34,7 @@ instance Applicative (Parser r t) where
 -- taking the first one that succeeds
 instance Alternative (Parser r t) where
     empty = Parser (const $ throw "Empty Fail")
-    p1 <|> p2 = Parser ((<|>) <$> (pFunc p1) <*> (pFunc p2))
+    p1 <|> p2 = Parser ((<|>) <$> pFunc p1 <*> pFunc p2)
 
 -- | returning a value means building a parser that consumes no input and just gives back the value (i.e. always succeeds)
 -- the bind operator means using the parser, creating a second parser from the result (with the given function) and then parsing with that.

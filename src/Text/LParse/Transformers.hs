@@ -24,9 +24,9 @@ a << b = a >>= ((b >>) . return)
 cParse :: (t -> Bool) -> Parser r t a -> String -> Parser r t a
 cParse c p err = Parser (\s -> if c s then pFunc p s else throw err)
 
--- | Takes a condition the next token has to fulfil in order for the parser to succeed
+-- | Takes  condition the next token has to fulfil in order for the parser to succeed
 nParse :: (TokenStream s, Eq (s t)) => (t -> Bool) -> Parser r (s t) a -> String -> Parser r (s t) a
-nParse c p err = cParse (\s -> not (nil == s) && c (top s)) p err
+nParse c = cParse (\s -> nil /= s && c (top s))
 
 -- | Transforms the input before applying the parser
 pParse :: (t -> t) -> Parser r t a -> Parser r t a
