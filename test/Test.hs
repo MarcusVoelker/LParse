@@ -3,6 +3,7 @@ module Main where
 import Text.LParse.Parser
 import Text.LParse.Atomics
 import Text.LParse.Transformers
+import Text.LParse.Description
 
 import Control.Applicative
 import Control.Arrow
@@ -63,8 +64,15 @@ intCases = [
     (sum <$> sepMany (consume " ") integer,"1 4 12 61 192",1+4+12+61+192),
     (integer >>> (sum <$> bDigits 2), "19", 3),
     (integer >>> (foldr (\x y -> x + y * 2) 0 <$> bDigits 2), "19", 19),
-    ((\x y -> x*10+y) <$> sInteger <*> ((consumeSingle ' ') >> sInteger), "-123 123", (-123*10) + 123),
+    ((\x y -> x*10+y) <$> sInteger <*> (consumeSingle ' ' >> sInteger), "-123 123", (-123*10) + 123),
     (nParse (=='1') integer "Expected '1'", "123", 123)
+    ]
+
+metaCases :: [(String, String)]
+metaCases = [
+        ("\\w\\e","oha"),
+        ("\\d*\\e","123123"),
+        ("(\\w\\d)+\\e","abc3def1g0")
     ]
 
 runTests :: [(Parser (Either String a) t a,t)] -> [Either String a]
@@ -74,10 +82,13 @@ eqTest :: (Eq a, Show a) => (Parser (Either String ()) t a, t, a) -> Either Stri
 eqTest (p,i,e) = parse p i (\r -> if r == e then Right () else Left ("Expected " ++ show e ++ ", but got " ++ show r)) (\e -> Left $ "Parser error: " ++ e)
 
 succTest :: [Either String a] -> IO ()
-succTest res = if all isRight res then return () else putStrLn (head $ lefts res) >> exitFailure
+succTest res = unless (all isRight res) $ putStrLn (head $ lefts res) >> exitFailure
 
 failTest :: [Either String a] -> IO ()
-failTest res = if all isLeft res then return () else putStrLn "Fail Test Succeeded" >> exitFailure
+failTest res = unless (all isLeft res) $ putStrLn "Fail Test Succeeded" >> exitFailure
+
+metaTest :: (String,String) -> Either String AST
+metaTest (g,i) = either (\a -> Left ("Case " ++ show (g,i)  ++ ": " ++ a)) Right (doParse parserParser g >>= (`doParse` i))
 
 main ::IO ()
 main = do
@@ -85,8 +96,10 @@ main = do
     let fres = runTests failCases
     let seres = map eqTest stringCases
     let ieres = map eqTest intCases
+    let mres = map metaTest metaCases
     succTest sres
     failTest fres
     succTest seres
     succTest ieres
+    succTest mres
     exitSuccess
