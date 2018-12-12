@@ -33,7 +33,9 @@ succCases = [
     (letter >> eoi, "b"),
     (digit >> eoi, "4"),
     (word >> eoi, "banana"),
-    (nesting >> eoi, "({()}[])")
+    (nesting >> eoi, "({()}[])"),
+    (try word >> integer >> eoi, "123"),
+    (try word >> integer >> eoi, "super123")
     ]
 
 failCases :: [(Parser r String (),String)]
@@ -44,7 +46,8 @@ failCases = [
     (letter >> eoi, "banana"),
     (digit >> eoi, "42"),
     (word >> eoi, "banana bread"),
-    (nesting >> eoi, "({(})[])")
+    (nesting >> eoi, "({(})[])"),
+    (void $ nParse (=='1') integer "Expected '1'", "234")
     ]
 
 stringCases :: [(Parser r String String, String, String)]
@@ -59,14 +62,16 @@ intCases = [
     (digit,"123 is a nice number",1),
     (sum <$> sepMany (consume " ") integer,"1 4 12 61 192",1+4+12+61+192),
     (integer >>> (sum <$> bDigits 2), "19", 3),
-    (integer >>> (foldr (\x y -> x + y * 2) 0 <$> bDigits 2), "19", 19)
+    (integer >>> (foldr (\x y -> x + y * 2) 0 <$> bDigits 2), "19", 19),
+    ((\x y -> x*10+y) <$> sInteger <*> ((consumeSingle ' ') >> sInteger), "-123 123", (-123*10) + 123),
+    (nParse (=='1') integer "Expected '1'", "123", 123)
     ]
 
 runTests :: [(Parser (Either String a) t a,t)] -> [Either String a]
 runTests = map (uncurry doParse)
 
 eqTest :: (Eq a, Show a) => (Parser (Either String ()) t a, t, a) -> Either String ()
-eqTest (p,i,e) = parse p i (\r -> if r == e then Right () else Left ("Expected " ++ show e ++ ", but got " ++ show r)) (const $ Left "Parser error")
+eqTest (p,i,e) = parse p i (\r -> if r == e then Right () else Left ("Expected " ++ show e ++ ", but got " ++ show r)) (\e -> Left $ "Parser error: " ++ e)
 
 succTest :: [Either String a] -> IO ()
 succTest res = if all isRight res then return () else putStrLn (head $ lefts res) >> exitFailure
