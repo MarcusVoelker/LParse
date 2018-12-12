@@ -3,7 +3,7 @@ module Main where
 import Text.LParse.Parser
 import Text.LParse.Atomics
 import Text.LParse.Transformers
-import Text.LParse.Description
+import Text.LParse.Metaparser
 
 import Control.Applicative
 import Control.Arrow
