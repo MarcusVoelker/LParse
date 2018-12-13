@@ -70,9 +70,9 @@ intCases = [
 
 metaCases :: [(String, String)]
 metaCases = [
-        ("\\w\\e","oha"),
-        ("\\d*\\e","123123"),
-        ("(\\w\\d)+\\e","abc3def1g0")
+        ("\\w$","oha"),
+        ("\\d*$","123123"),
+        ("(\\w\\d)+$","abc3def1g0")
     ]
 
 runTests :: [(Parser (Either String a) t a,t)] -> [Either String a]
@@ -88,7 +88,7 @@ failTest :: [Either String a] -> IO ()
 failTest res = unless (all isLeft res) $ putStrLn "Fail Test Succeeded" >> exitFailure
 
 metaTest :: (String,String) -> Either String AST
-metaTest (g,i) = either (\a -> Left ("Case " ++ show (g,i)  ++ ": " ++ a)) Right (doParse parserParser g >>= (`doParse` i))
+metaTest (g,i) = either (\a -> Left ("Case " ++ show (g,i)  ++ ": " ++ a)) Right (specParse g i)
 
 main ::IO ()
 main = do
