@@ -15,7 +15,7 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Control.DoubleContinuations Text.LParse.Atomics, Text.LParse.Metaparser, Text.LParse.Parser, Text.LParse.TokenStream, Text.LParse.Transformers
+  exposed-modules:     Control.DoubleContinuations, Text.LParse.Metaparser, Text.LParse.Parser, Text.LParse.Prebuilt, Text.LParse.TokenStream
   build-depends:       base >= 4.7 && < 5
   default-language:    Haskell2010
 

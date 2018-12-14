@@ -1,8 +1,7 @@
 module Main where 
 
 import Text.LParse.Parser
-import Text.LParse.Atomics
-import Text.LParse.Transformers
+import Text.LParse.Prebuilt
 import Text.LParse.Metaparser
 
 import Control.Applicative
@@ -14,10 +13,10 @@ import Data.Maybe
 import System.Exit (exitSuccess,exitFailure)
 
 bracks :: Parser r String ()
-bracks = (consume "(" >> nesting << consume ")")
-    <|> (consume "[" >> nesting << consume "]")
-    <|> (consume "{" >> nesting << consume "}")
-    <|> (consume "<" >> nesting << consume ">")
+bracks = surround "()" nesting
+    <|> surround "[]" nesting
+    <|> surround "{}" nesting
+    <|> surround "<>" nesting
 
 nesting :: Parser r String ()
 nesting = void $ many bracks

@@ -3,9 +3,8 @@ module Text.LParse.Metaparser (specParse,metaParser,AST) where
 import Control.Applicative
 import Control.Arrow
 
-import Text.LParse.Atomics
 import Text.LParse.Parser
-import Text.LParse.Transformers
+import Text.LParse.Prebuilt
 
 data Token = Literal Char | CharClass String | Special Char | Star | Plus | May | Eoi | LParen | RParen deriving (Show,Eq)
 data AST = Node String [AST] | ILeaf Integer | SLeaf String | EOI deriving Show
