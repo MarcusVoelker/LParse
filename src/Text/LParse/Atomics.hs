@@ -50,6 +50,10 @@ consume pre = cParse ((&&) <$> (and . sZipWith (==) pre) <*> ((>= length pre) . 
 consumeSingle :: (Eq t, Show t, TokenStream s) => t -> Parser r (s t) ()
 consumeSingle t = cParse (\s -> not (null s) && top s == t) (pParse rest noop) ("Expected " ++ show t)
 
+-- | Consumes exactly the given token and then returns the given constant result
+consumeReturn :: (Eq t, Show t, TokenStream s) => t -> a -> Parser r (s t) a
+consumeReturn t a = consumeSingle t >> return a
+
 -- | Extracts the first digit and returns it
 digit :: Parser r String Integer
 digit = read . return <$> cParse (\s -> not (null s) && isDigit (head s)) tokenReturn "Expected digit"

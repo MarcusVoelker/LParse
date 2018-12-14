@@ -58,5 +58,9 @@ replace :: (TokenStream s) => (t -> t) -> Parser r (s t) a -> Parser r (s t) a
 replace f p = Parser (pFunc p . (\x -> f (top x) `cons` rest x))
 
 -- | Tries to run the given parser, giving back Just result or Nothing
-try :: (TokenStream s) => Parser r (s t) a -> Parser r (s t) (Maybe a)
+try :: Parser r t a -> Parser r t (Maybe a)
 try p = (Just <$> p) <|> return Nothing
+
+-- | Parses a character before and a character after the given parser, useful for parentheses
+surround :: (Eq t, Show t, TokenStream s) => [t] -> Parser r (s t) a -> Parser r (s t) a
+surround [l,r] p = consumeSingle l >> p << consumeSingle r

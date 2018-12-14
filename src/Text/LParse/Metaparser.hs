@@ -11,34 +11,34 @@ data Token = Literal Char | CharClass String | Special Char | Star | Plus | May 
 data AST = Node String [AST] | ILeaf Integer | SLeaf String | EOI deriving Show
 
 escaped :: Parser r String Token
-escaped = (consumeSingle 'i' >> return (Special 'i'))
-    <|> (consumeSingle 'd' >> return (Special 'd'))
-    <|> (consumeSingle 'w' >> return (Special 'w'))
-    <|> (consumeSingle '\\' >> return (Literal '\\'))
-    <|> (consumeSingle '*' >> return (Literal '*'))
-    <|> (consumeSingle '+' >> return (Literal '+'))
-    <|> (consumeSingle '?' >> return (Literal '?'))
-    <|> (consumeSingle '[' >> return (Literal '['))
-    <|> (consumeSingle ']' >> return (Literal ']'))
-    <|> (consumeSingle '(' >> return (Literal '('))
-    <|> (consumeSingle ')' >> return (Literal ')'))
-    <|> (consumeSingle '$' >> return (Literal '$'))
+escaped = consumeReturn 'i' (Special 'i')
+    <|> consumeReturn 'd' (Special 'd')
+    <|> consumeReturn 'w' (Special 'w')
+    <|> consumeReturn '\\' (Literal '\\')
+    <|> consumeReturn '*' (Literal '*')
+    <|> consumeReturn '+' (Literal '+')
+    <|> consumeReturn '?' (Literal '?')
+    <|> consumeReturn '[' (Literal '[')
+    <|> consumeReturn ']' (Literal ']')
+    <|> consumeReturn '(' (Literal '(')
+    <|> consumeReturn ')' (Literal ')')
+    <|> consumeReturn '$' (Literal '$')
 
 charclass :: Parser r String Token
 charclass = CharClass <$> some (nParse (/=']') tokenReturn "Expected character")
 
 simpleSpecial :: Parser r String Token
-simpleSpecial = (consumeSingle '*' >> return Star)
-    <|> (consumeSingle '+' >> return Plus)
-    <|> (consumeSingle '?' >> return May)
-    <|> (consumeSingle '$' >> return Eoi)
-    <|> (consumeSingle '(' >> return LParen)
-    <|> (consumeSingle ')' >> return RParen)
+simpleSpecial = consumeReturn '*' Star
+    <|> consumeReturn '+' Plus
+    <|> consumeReturn '?' May
+    <|> consumeReturn '$' Eoi
+    <|> consumeReturn '(' LParen
+    <|> consumeReturn ')' RParen
 
 metaTokenizer :: Parser r String [Token]
 metaTokenizer = many (
     (consumeSingle '\\' >> escaped)
-    <|> (consumeSingle '[' >> charclass << consumeSingle ']')
+    <|> surround "[]" charclass
     <|> simpleSpecial
     <|> (Literal <$> tokenReturn)
     )
@@ -77,7 +77,7 @@ atomParser = iLeafParser
     <|> charClassParser
 
 starFreeParser :: Parser r [Token] (Parser r' String AST)
-starFreeParser = (consumeSingle LParen >> cfexParser << consumeSingle RParen) <|> atomParser
+starFreeParser = surround [LParen,RParen] cfexParser <|> atomParser
 
 concatFreeParser :: Parser r [Token] (Parser r' String AST) 
 concatFreeParser = do
