@@ -71,7 +71,8 @@ metaCases :: [(String, String)]
 metaCases = [
         ("\\w$","oha"),
         ("\\d*$","123123"),
-        ("(\\w\\d)+$","abc3def1g0")
+        ("(\\w\\d)+$","abc3def1g0"),
+        ("abc\\d$","abc3")
     ]
 
 runTests :: [(Parser (Either String a) t a,t)] -> [Either String a]

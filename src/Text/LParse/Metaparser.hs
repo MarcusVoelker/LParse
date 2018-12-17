@@ -6,13 +6,13 @@ import Control.Arrow
 import Text.LParse.Parser
 import Text.LParse.Prebuilt
 
-data Token = Literal Char | CharClass String | Special Char | Star | Plus | May | Eoi | LParen | RParen deriving (Show,Eq)
+data Token = Literal Char | CharClass String | Integer | Digit | Word | Star | Plus | May | Eoi | LParen | RParen deriving (Show,Eq)
 data AST = Node String [AST] | ILeaf Integer | SLeaf String | EOI deriving Show
 
 escaped :: Parser r String Token
-escaped = consumeReturn 'i' (Special 'i')
-    <|> consumeReturn 'd' (Special 'd')
-    <|> consumeReturn 'w' (Special 'w')
+escaped = consumeReturn 'i' Integer
+    <|> consumeReturn 'd' Digit
+    <|> consumeReturn 'w' Word
     <|> consumeReturn '\\' (Literal '\\')
     <|> consumeReturn '*' (Literal '*')
     <|> consumeReturn '+' (Literal '+')
@@ -43,16 +43,16 @@ metaTokenizer = many (
     )
 
 iLeafParser :: Parser r [Token] (Parser r' String AST)
-iLeafParser = consumeSingle (Special 'i') >> return (ILeaf <$> integer)
+iLeafParser = consumeReturn Integer (ILeaf <$> integer)
 
 dLeafParser :: Parser r [Token] (Parser r' String AST)
-dLeafParser = consumeSingle (Special 'd') >> return (ILeaf <$> digit)
+dLeafParser = consumeReturn Digit (ILeaf <$> digit)
 
 sLeafParser :: Parser r [Token] (Parser r' String AST)
-sLeafParser = consumeSingle (Special 'w') >> return (SLeaf <$> word)
+sLeafParser = consumeReturn Word (SLeaf <$> word)
 
 eoiParser :: Parser r [Token] (Parser r' String AST)
-eoiParser = consumeSingle Eoi >> return (eoi >> return EOI)
+eoiParser = consumeReturn Eoi (eoi >> return EOI)
 
 charClassCharParser :: String -> Parser r String Char
 charClassCharParser (c:s) | c == '^' = nParse (not . (`elem` s)) tokenReturn ("Expected not [" ++ s ++ "]")
@@ -68,12 +68,23 @@ getCharClass (CharClass s) = s
 charClassParser :: Parser r [Token] (Parser r' String AST)
 charClassParser = nParse isCharClass (tokenParse (fmap (SLeaf . return) . charClassCharParser . getCharClass)) "Expected character class"
 
+isLiteral :: Token -> Bool
+isLiteral (Literal _) = True
+isLiteral _ = False
+
+getLiteral :: Token -> Char
+getLiteral (Literal s) = s
+
+charParser :: Parser r [Token] (Parser r' String AST)
+charParser = nParse isLiteral (tokenParse (fmap (SLeaf . return) . (\c -> consumeReturn c c) . getLiteral)) "Expected Literal"
+
 atomParser :: Parser r [Token] (Parser r' String AST)
 atomParser = iLeafParser
     <|> dLeafParser
     <|> sLeafParser
     <|> eoiParser
     <|> charClassParser
+    <|> charParser
 
 starFreeParser :: Parser r [Token] (Parser r' String AST)
 starFreeParser = surround [LParen,RParen] cfexParser <|> atomParser
