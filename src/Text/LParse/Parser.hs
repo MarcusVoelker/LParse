@@ -12,9 +12,11 @@ module Text.LParse.Parser where
 import Control.DoubleContinuations
 
 import Control.Applicative
-import Control.Monad
 import Control.Arrow
 import qualified Control.Category as C
+import Control.Monad
+import Control.Monad.Fix
+
 import Data.List
 
 -- | The Parser structure itself wraps a function from a collection of tokens (collectively of type t) to a double continuation giving
@@ -48,6 +50,10 @@ instance MonadPlus (Parser r t) where
     mzero = empty
     mplus = (<|>)
 
+-- | For future-dependant parsing
+instance MonadFix (Parser r t) where
+    mfix = undefined
+
 -- | The identity parser returns the input. Concatenating two parsers means using the parsing result of the first as tokens for the second
 instance C.Category (Parser r) where
     id = Parser (\s -> return (s,s))
@@ -70,6 +76,10 @@ parse p s = run (pFunc p s) . (. fst)
 -- | Same as @parse@, but giving back the results via @Either@
 doParse :: Parser (Either String a) t a -> t -> Either String a
 doParse p s = invoke (fst <$> pFunc p s)
+
+-- | Same as @parse@, but giving back the results via @Either@
+forceParse :: Parser a t a -> t -> a
+forceParse p s = parse p s id undefined 
 
 -- | Runs the parser and prints the results
 debugParse :: (Show a) => Parser (IO ()) t a -> t -> IO ()

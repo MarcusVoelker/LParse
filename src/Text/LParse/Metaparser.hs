@@ -2,6 +2,7 @@ module Text.LParse.Metaparser (specParse,metaParser,AST) where
 
 import Control.Applicative
 import Control.Arrow
+import Control.Monad.Fix
 
 import Data.Char
 import Data.List
@@ -10,7 +11,7 @@ import qualified Data.Map.Strict as M
 import Text.LParse.Parser
 import Text.LParse.Prebuilt
 
-data Token = Literal Char | CharClass String | Integer | Digit | Word | Star | Plus | May | Or | Is | Eoi | LParen | RParen | Sep | Whitespace deriving (Show,Eq)
+data Token = Literal Char | CharClass String | RuleName String | Integer | Digit | Word | Star | Plus | May | Or | Is | Eoi | LParen | RParen | Sep | Whitespace deriving (Show,Eq)
 data AST = Node String [AST] | ILeaf Integer | SLeaf String | EOI deriving Eq
 
 instance Show AST where
@@ -50,11 +51,15 @@ simpleSpecial = consumeSReturn '*' Star
 whitespace :: Parser r String Token
 whitespace = some (nParse isSpace (return ()) "Expected Space") >> return Whitespace
 
+ruleName :: Parser r String Token
+ruleName = consumeSingle '%' >> (RuleName <$> word)
+
 metaTokenizer :: Parser r String [Token]
 metaTokenizer = many (
     (consumeSingle '\\' >> escaped)
     <|> surround "[]" charclass
     <|> simpleSpecial
+    <|> ruleName
     <|> whitespace
     <|> (Literal <$> tokenReturn)
     )
@@ -70,6 +75,16 @@ sLeafParser = consumeSReturn Word (SLeaf <$> word)
 
 eoiParser :: Parser r [Token] (Parser r' String AST)
 eoiParser = consumeSReturn Eoi (eoi >> return EOI)
+
+isRuleName :: Token -> Bool
+isRuleName (RuleName _) = True
+isRuleName _ = False
+
+getRuleName :: Token -> String
+getRuleName (RuleName s) = s
+
+subRuleParser :: M.Map String (Parser r' String AST) -> Parser r [Token] (Parser r' String AST)
+subRuleParser m = nParse isRuleName (tokenParse ((m M.!) . getRuleName)) "Expected RuleName"
 
 charClassCharParser :: String -> Parser r String Char
 charClassCharParser (c:s) | c == '^' = nParse (not . (`elem` s)) tokenReturn ("Expected not [" ++ s ++ "]")
@@ -98,44 +113,49 @@ parseLiteral = nParse isLiteral (tokenParse getLiteral) "Expected Literal"
 charParser :: Parser r [Token] (Parser r' String AST)
 charParser = fmap (SLeaf . return) . (\c -> consumeSReturn c c) <$> parseLiteral
 
-atomParser :: Parser r [Token] (Parser r' String AST)
-atomParser = iLeafParser
+atomParser :: M.Map String (Parser r' String AST) -> Parser r [Token] (Parser r' String AST)
+atomParser m = iLeafParser
     <|> dLeafParser
     <|> sLeafParser
     <|> eoiParser
     <|> charClassParser
+    <|> subRuleParser m
     <|> charParser
 
-starFreeParser :: Parser r [Token] (Parser r' String AST)
-starFreeParser = surround [LParen,RParen] cfexParser <|> atomParser
+starFreeParser :: M.Map String (Parser r' String AST) -> Parser r [Token] (Parser r' String AST)
+starFreeParser m = surround [LParen,RParen] (cfexParser m) <|> atomParser m
 
-concatFreeParser :: Parser r [Token] (Parser r' String AST) 
-concatFreeParser = do
-    sf <- starFreeParser
+concatFreeParser :: M.Map String (Parser r' String AST) -> Parser r [Token] (Parser r' String AST) 
+concatFreeParser m = do
+    sf <- starFreeParser m
     (consumeSingle Star >> return (Node "many" <$> many sf)) 
         <|> (consumeSingle Plus >> return (Node "some" <$> some sf)) 
         <|> return sf
 
-orFreeParser :: Parser r [Token] (Parser r' String AST)
-orFreeParser = (\ps -> if length ps == 1 then head ps else Node "concat" <$> sequenceA ps) <$> some concatFreeParser 
+orFreeParser :: M.Map String (Parser r' String AST) -> Parser r [Token] (Parser r' String AST)
+orFreeParser m = (\ps -> if length ps == 1 then head ps else Node "concat" <$> sequenceA ps) <$> some (concatFreeParser m)
 
-cfexParser :: Parser r [Token] (Parser r' String AST)
-cfexParser = (\ps -> if length ps == 1 then head ps else Node "or" <$> sequenceA ps) <$> sepSome (consumeSingle Or) orFreeParser
+cfexParser :: M.Map String (Parser r' String AST) -> Parser r [Token] (Parser r' String AST)
+cfexParser m = (\ps -> if length ps == 1 then head ps else Node "or" <$> sequenceA ps) <$> sepSome (consumeSingle Or) (orFreeParser m)
 
-ruleParser :: Parser r [Token] (String,Parser r' String AST)
-ruleParser = (,) <$> (many (nParse isLiteral (tokenParse getLiteral) "Expected Literal") << consumeSingle Is) <*> cfexParser
+ruleParser :: M.Map String (Parser r' String AST) -> Parser r [Token] (String,Parser r' String AST)
+ruleParser m = (,) <$> (many (nParse isLiteral (tokenParse getLiteral) "Expected Literal") << consumeSingle Is) <*> cfexParser m
 
-rulesetParser :: Parser r [Token] (M.Map String (Parser r' String AST))
-rulesetParser = M.fromList<$> sepMany (consumeSingle Sep) ruleParser
+rulesetParser :: M.Map String (Parser r' String AST) -> Parser r [Token] (M.Map String (Parser r' String AST))
+rulesetParser m = M.fromList<$> sepMany (consumeSingle Sep) (ruleParser m)
 
-combine :: M.Map String (Parser r' String AST) -> Parser r' String AST -> Parser r' String AST
-combine rs e = e
+rulesetLoop :: Parser r [Token] (M.Map String (Parser r' String AST))
+rulesetLoop = mfix rulesetParser
+
+combine :: Maybe (M.Map String (Parser r' String AST)) -> Parser r [Token] (Parser r' String AST)
+combine Nothing = cfexParser M.empty
+combine (Just rs) = cfexParser rs 
 
 fullParser :: Parser r [Token] (Parser r' String AST)
-fullParser = combine <$> rulesetParser <*> cfexParser
+fullParser = try (rulesetLoop << consumeSingle Sep) >>= combine
 
 parserParser :: Parser r [Token] (Parser r' String AST)
-parserParser = cfexParser << eoi
+parserParser = fullParser << eoi
 
 metaParser :: Parser r String (Parser r' String AST)
 metaParser = metaTokenizer >>> skip [Whitespace] parserParser
