@@ -67,12 +67,12 @@ intCases = [
     (nParse (=='1') integer "Expected '1'", "123", 123)
     ]
 
-metaCases :: [(String, String)]
+metaCases :: [(String, String, String)]
 metaCases = [
-        ("\\w$","oha"),
-        ("\\d*$","123123"),
-        ("(\\w\\d)+$","abc3def1g0"),
-        ("abc\\d$","abc3")
+        ("\\w$","oha","concat(oha,$)"),
+        ("\\d*$","123123","concat(many(1,2,3,1,2,3),$)"),
+        ("(\\w\\d)+$","abc3def1g0","concat(some(concat(abc,3),concat(def,1),concat(g,0)),$)"),
+        ("abc\\d$","abc3","concat(a,b,c,3,$)")
     ]
 
 runTests :: [(Parser (Either String a) t a,t)] -> [Either String a]
@@ -87,8 +87,8 @@ succTest res = unless (all isRight res) $ putStrLn (head $ lefts res) >> exitFai
 failTest :: [Either String a] -> IO ()
 failTest res = unless (all isLeft res) $ putStrLn "Fail Test Succeeded" >> exitFailure
 
-metaTest :: (String,String) -> Either String AST
-metaTest (g,i) = either (\a -> Left ("Case " ++ show (g,i)  ++ ": " ++ a)) Right (specParse g i)
+metaTest :: (String,String,String) -> Either String AST
+metaTest (g,i,a) = either (\a -> Left ("Case " ++ show (g,i)  ++ ": " ++ a)) (\ast -> if show ast == a then Right ast else Left ("Expected AST " ++ a ++ " but got " ++ show ast)) (specParse g i)
 
 main ::IO ()
 main = do

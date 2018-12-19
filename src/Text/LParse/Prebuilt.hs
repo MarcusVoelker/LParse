@@ -38,13 +38,17 @@ tokenReturn = tokenParse id
 consume :: (Eq t, Show (s t), TokenStream s) => s t -> Parser r (s t) ()
 consume pre = cParse ((&&) <$> (and . sZipWith (==) pre) <*> ((>= length pre) . length)) (pParse (sDrop (length pre)) noop) ("Expected " ++ show pre)
 
+-- | Consumes exactly the given input and then returns the given constant result
+consumeReturn :: (Eq t, Show (s t), TokenStream s) => s t -> a -> Parser r (s t) a
+consumeReturn t a = consume t >> return a
+
 -- | Succeeds exactly if the input begins with the given token. On success, consumes that token
 consumeSingle :: (Eq t, Show t, TokenStream s) => t -> Parser r (s t) ()
 consumeSingle t = cParse (\s -> not (null s) && top s == t) (pParse rest noop) ("Expected " ++ show t)
 
 -- | Consumes exactly the given token and then returns the given constant result
-consumeReturn :: (Eq t, Show t, TokenStream s) => t -> a -> Parser r (s t) a
-consumeReturn t a = consumeSingle t >> return a
+consumeSReturn :: (Eq t, Show t, TokenStream s) => t -> a -> Parser r (s t) a
+consumeSReturn t a = consumeSingle t >> return a
 
 -- | Extracts the first digit and returns it
 digit :: Parser r String Integer
