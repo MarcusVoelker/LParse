@@ -29,6 +29,9 @@ instance Monad (DCont r e) where
     return x = DCont (\f _ -> f x)
     c >>= f = DCont (\btr etr -> run c (\x -> run (f x) btr etr) etr)
 
+dfix :: (Either e a -> DCont (Either e a) e a) -> DCont r e a
+dfix f = let ea = run (f ea) Right Left in wrap ea
+
 -- | via Monad/Functor laws
 instance Functor (DCont r e) where
     fmap = liftM
@@ -46,3 +49,7 @@ instance Alternative (DCont r e) where
 -- | Convenience function to run a computation and put the result into an Either (with Left being the error and Right being the success)
 invoke :: DCont (Either e a) e a -> Either e a
 invoke c = run c Right Left
+
+-- | Convenience function to put an @Either@ into a @DCont@
+wrap :: Either e a -> DCont r e a
+wrap = either throw return

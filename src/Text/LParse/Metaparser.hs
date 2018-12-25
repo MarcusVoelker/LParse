@@ -145,7 +145,7 @@ rulesetParser :: M.Map String (Parser r' String AST) -> Parser r [Token] (M.Map 
 rulesetParser m = M.fromList<$> sepMany (consumeSingle Sep) (ruleParser m)
 
 rulesetLoop :: Parser r [Token] (M.Map String (Parser r' String AST))
-rulesetLoop = mfix rulesetParser
+rulesetLoop = pfix rulesetParser
 
 combine :: Maybe (M.Map String (Parser r' String AST)) -> Parser r [Token] (Parser r' String AST)
 combine Nothing = cfexParser M.empty

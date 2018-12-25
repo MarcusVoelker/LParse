@@ -15,8 +15,8 @@ import Control.Applicative
 import Control.Arrow
 import qualified Control.Category as C
 import Control.Monad
-import Control.Monad.Fix
 
+import Data.Either
 import Data.List
 
 -- | The Parser structure itself wraps a function from a collection of tokens (collectively of type t) to a double continuation giving
@@ -50,9 +50,11 @@ instance MonadPlus (Parser r t) where
     mzero = empty
     mplus = (<|>)
 
--- | For future-dependant parsing
-instance MonadFix (Parser r t) where
-    mfix = undefined
+pfix' :: (Either String (a,t) -> Parser (Either String (a,t)) t a) -> Parser r t a
+pfix' f = Parser (dfix . flip (pFunc . f))
+
+pfix :: (a -> Parser (Either String (a,t)) t a) -> Parser r t a
+pfix f = pfix' (f . fst . fromRight undefined)
 
 -- | The identity parser returns the input. Concatenating two parsers means using the parsing result of the first as tokens for the second
 instance C.Category (Parser r) where
