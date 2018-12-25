@@ -136,7 +136,7 @@ orFreeParser :: M.Map String (Parser r' String AST) -> Parser r [Token] (Parser 
 orFreeParser m = (\ps -> if length ps == 1 then head ps else Node "concat" <$> sequenceA ps) <$> some (concatFreeParser m)
 
 cfexParser :: M.Map String (Parser r' String AST) -> Parser r [Token] (Parser r' String AST)
-cfexParser m = (\ps -> if length ps == 1 then head ps else Node "or" <$> sequenceA ps) <$> sepSome (consumeSingle Or) (orFreeParser m)
+cfexParser m = foldl1 (<|>) <$> sepSome (consumeSingle Or) (orFreeParser m)
 
 ruleParser :: M.Map String (Parser r' String AST) -> Parser r [Token] (String,Parser r' String AST)
 ruleParser m = (,) <$> (many (nParse isLiteral (tokenParse getLiteral) "Expected Literal") << consumeSingle Is) <*> cfexParser m

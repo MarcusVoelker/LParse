@@ -72,7 +72,10 @@ metaCases = [
         ("\\w$","oha","concat(oha,$)"),
         ("\\d*$","123123","concat(many(1,2,3,1,2,3),$)"),
         ("(\\w\\d)+$","abc3def1g0","concat(some(concat(abc,3),concat(def,1),concat(g,0)),$)"),
-        ("abc\\d$","abc3","concat(a,b,c,3,$)")
+        ("abc\\d$","abc3","concat(a,b,c,3,$)"),
+        ("t::=abc;%t$","abc","concat(concat(a,b,c),$)"),
+        ("t::=a|c;%t$","a","concat(a,$)"),
+        ("t::=a%t|c;%t$","aaac","concat(concat(a,concat(a,concat(a,c))),$)")
     ]
 
 runTests :: [(Parser (Either String a) t a,t)] -> [Either String a]
