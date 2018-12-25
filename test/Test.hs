@@ -77,7 +77,7 @@ metaCases =
     , ("t::=a|c;%t$","a","_(t(a),$)")
     , ("t::=a%t|c;%t$","aaac","_(t(a,t(a,t(a,t(c)))),$)")
     , ("t::=t%s|t;s::=s%t|s;%t$","tststs","_(t(t,s(s,t(t,s(s,t(t,s(s)))))),$)")
-    , ("t::=t%s?;s::=s%t?;%t$","tststs","_(t(t,s(s,t(t,s(s,t(t,s(s)))))),$)")
+    , ("t::=t%s?;\ns::=s%t?;\n%t$","tststs","_(t(t,s(s,t(t,s(s,t(t,s(s)))))),$)")
     ]
 
 runTests :: [(Parser (Either String a) t a,t)] -> [Either String a]

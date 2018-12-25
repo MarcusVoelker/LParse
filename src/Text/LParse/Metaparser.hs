@@ -50,7 +50,7 @@ simpleSpecial = consumeSReturn '*' Star
     <|> consumeSReturn ';' Sep
 
 whitespace :: Parser r String Token
-whitespace = some (nParse isSpace (return ()) "Expected Space") >> return Whitespace
+whitespace = some (nParse isSpace tokenReturn "Expected Space") >> return Whitespace
 
 ruleName :: Parser r String Token
 ruleName = consumeSingle '%' >> (RuleName <$> word)
