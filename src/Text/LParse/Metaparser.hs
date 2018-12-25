@@ -122,24 +122,24 @@ atomParser m = iLeafParser
     <|> subRuleParser m
     <|> charParser
 
-starFreeParser :: M.Map String (Parser r' String AST) -> Parser r [Token] (Parser r' String AST)
-starFreeParser m = surround [LParen,RParen] (cfexParser m) <|> atomParser m
+starFreeParser :: M.Map String (Parser r' String AST) -> Parser r [Token] (Parser r' String [AST])
+starFreeParser m = surround [LParen,RParen] (cfexParser m) <|> (fmap return <$> atomParser m)
 
-concatFreeParser :: M.Map String (Parser r' String AST) -> Parser r [Token] (Parser r' String AST) 
+concatFreeParser :: M.Map String (Parser r' String AST) -> Parser r [Token] (Parser r' String [AST]) 
 concatFreeParser m = do
     sf <- starFreeParser m
-    (consumeSingle Star >> return (Node "many" <$> many sf)) 
-        <|> (consumeSingle Plus >> return (Node "some" <$> some sf)) 
+    (consumeSingle Star >> return (concat <$> many sf))
+        <|> (consumeSingle Plus >> return (concat <$> some sf))
         <|> return sf
 
-orFreeParser :: M.Map String (Parser r' String AST) -> Parser r [Token] (Parser r' String AST)
-orFreeParser m = (\ps -> if length ps == 1 then head ps else Node "concat" <$> sequenceA ps) <$> some (concatFreeParser m)
+orFreeParser :: M.Map String (Parser r' String AST) -> Parser r [Token] (Parser r' String [AST])
+orFreeParser m = fmap concat . sequenceA <$> some (concatFreeParser m)
 
-cfexParser :: M.Map String (Parser r' String AST) -> Parser r [Token] (Parser r' String AST)
+cfexParser :: M.Map String (Parser r' String AST) -> Parser r [Token] (Parser r' String [AST])
 cfexParser m = foldl1 (<|>) <$> sepSome (consumeSingle Or) (orFreeParser m)
 
 ruleParser :: M.Map String (Parser r' String AST) -> Parser r [Token] (String,Parser r' String AST)
-ruleParser m = (,) <$> (many (nParse isLiteral (tokenParse getLiteral) "Expected Literal") << consumeSingle Is) <*> cfexParser m
+ruleParser m = (\s as-> (s,Node s <$> as)) <$> (many (nParse isLiteral (tokenParse getLiteral) "Expected Literal") << consumeSingle Is) <*> cfexParser m
 
 rulesetParser :: M.Map String (Parser r' String AST) -> Parser r [Token] (M.Map String (Parser r' String AST))
 rulesetParser m = M.fromList<$> sepMany (consumeSingle Sep) (ruleParser m)
@@ -147,12 +147,12 @@ rulesetParser m = M.fromList<$> sepMany (consumeSingle Sep) (ruleParser m)
 rulesetLoop :: Parser r [Token] (M.Map String (Parser r' String AST))
 rulesetLoop = pfix rulesetParser
 
-combine :: Maybe (M.Map String (Parser r' String AST)) -> Parser r [Token] (Parser r' String AST)
+combine :: Maybe (M.Map String (Parser r' String AST)) -> Parser r [Token] (Parser r' String [AST])
 combine Nothing = cfexParser M.empty
 combine (Just rs) = cfexParser rs 
 
 fullParser :: Parser r [Token] (Parser r' String AST)
-fullParser = try (rulesetLoop << consumeSingle Sep) >>= combine
+fullParser = try (rulesetLoop << consumeSingle Sep) >>= (fmap (fmap (Node "_")) . combine)
 
 parserParser :: Parser r [Token] (Parser r' String AST)
 parserParser = fullParser << eoi

@@ -69,13 +69,13 @@ intCases = [
 
 metaCases :: [(String, String, String)]
 metaCases = [
-        ("\\w$","oha","concat(oha,$)"),
-        ("\\d*$","123123","concat(many(1,2,3,1,2,3),$)"),
-        ("(\\w\\d)+$","abc3def1g0","concat(some(concat(abc,3),concat(def,1),concat(g,0)),$)"),
-        ("abc\\d$","abc3","concat(a,b,c,3,$)"),
-        ("t::=abc;%t$","abc","concat(concat(a,b,c),$)"),
-        ("t::=a|c;%t$","a","concat(a,$)"),
-        ("t::=a%t|c;%t$","aaac","concat(concat(a,concat(a,concat(a,c))),$)")
+        ("\\w$","oha","_(oha,$)"),
+        ("\\d*$","123123","_(1,2,3,1,2,3,$)"),
+        ("(\\w\\d)+$","abc3def1g0","_(abc,3,def,1,g,0,$)"),
+        ("abc\\d$","abc3","_(a,b,c,3,$)"),
+        ("t::=abc;%t$","abc","_(t(a,b,c),$)"),
+        ("t::=a|c;%t$","a","_(t(a),$)"),
+        ("t::=a%t|c;%t$","aaac","_(t(a,t(a,t(a,t(c)))),$)")
     ]
 
 runTests :: [(Parser (Either String a) t a,t)] -> [Either String a]

@@ -50,11 +50,8 @@ instance MonadPlus (Parser r t) where
     mzero = empty
     mplus = (<|>)
 
-pfix' :: (Either String (a,t) -> Parser (Either String (a,t)) t a) -> Parser r t a
-pfix' f = Parser (dfix . flip (pFunc . f))
-
 pfix :: (a -> Parser (Either String (a,t)) t a) -> Parser r t a
-pfix f = pfix' (f . fst . fromRight undefined)
+pfix f = Parser (dfix . flip (pFunc . f . fst . fromRight undefined)) 
 
 -- | The identity parser returns the input. Concatenating two parsers means using the parsing result of the first as tokens for the second
 instance C.Category (Parser r) where
