@@ -68,14 +68,16 @@ intCases = [
     ]
 
 metaCases :: [(String, String, String)]
-metaCases = [
-        ("\\w$","oha","_(oha,$)"),
-        ("\\d*$","123123","_(1,2,3,1,2,3,$)"),
-        ("(\\w\\d)+$","abc3def1g0","_(abc,3,def,1,g,0,$)"),
-        ("abc\\d$","abc3","_(a,b,c,3,$)"),
-        ("t::=abc;%t$","abc","_(t(a,b,c),$)"),
-        ("t::=a|c;%t$","a","_(t(a),$)"),
-        ("t::=a%t|c;%t$","aaac","_(t(a,t(a,t(a,t(c)))),$)")
+metaCases = 
+    [ ("\\w$","oha","_(oha,$)")
+    , ("\\d*$","123123","_(1,2,3,1,2,3,$)")
+    , ("(\\w\\d)+$","abc3def1g0","_(abc,3,def,1,g,0,$)")
+    , ("abc\\d$","abc3","_(a,b,c,3,$)")
+    , ("t::=abc;%t$","abc","_(t(a,b,c),$)")
+    , ("t::=a|c;%t$","a","_(t(a),$)")
+    , ("t::=a%t|c;%t$","aaac","_(t(a,t(a,t(a,t(c)))),$)")
+    , ("t::=t%s|t;s::=s%t|s;%t$","tststs","_(t(t,s(s,t(t,s(s,t(t,s(s)))))),$)")
+    , ("t::=t%s?;s::=s%t?;%t$","tststs","_(t(t,s(s,t(t,s(s,t(t,s(s)))))),$)")
     ]
 
 runTests :: [(Parser (Either String a) t a,t)] -> [Either String a]
@@ -85,7 +87,7 @@ eqTest :: (Eq a, Show a) => (Parser (Either String ()) t a, t, a) -> Either Stri
 eqTest (p,i,e) = parse p i (\r -> if r == e then Right () else Left ("Expected " ++ show e ++ ", but got " ++ show r)) (\e -> Left $ "Parser error: " ++ e)
 
 succTest :: [Either String a] -> IO ()
-succTest res = unless (all isRight res) $ putStrLn (head $ lefts res) >> exitFailure
+succTest res = unless (all isRight res) $ mapM_ putStrLn (lefts res) >> exitFailure
 
 failTest :: [Either String a] -> IO ()
 failTest res = unless (all isLeft res) $ putStrLn "Fail Test Succeeded" >> exitFailure

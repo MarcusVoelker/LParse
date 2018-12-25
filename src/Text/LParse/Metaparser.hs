@@ -7,6 +7,7 @@ import Control.Monad.Fix
 import Data.Char
 import Data.List
 import qualified Data.Map.Strict as M
+import Data.Maybe
 
 import Text.LParse.Parser
 import Text.LParse.Prebuilt
@@ -130,6 +131,7 @@ concatFreeParser m = do
     sf <- starFreeParser m
     (consumeSingle Star >> return (concat <$> many sf))
         <|> (consumeSingle Plus >> return (concat <$> some sf))
+        <|> (consumeSingle May >> return (concat . maybeToList <$> try sf))
         <|> return sf
 
 orFreeParser :: M.Map String (Parser r' String AST) -> Parser r [Token] (Parser r' String [AST])
