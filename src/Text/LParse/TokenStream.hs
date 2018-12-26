@@ -13,7 +13,7 @@ import Data.Either
 import Data.Maybe
 import Data.Traversable
 
-{-# DEPRECATED skipN "Use sDrop in place of skipN" #-}
+import Prelude hiding (filter,zip,zipWith,drop)
 
 -- | `TokenStream` abstracts a list, i.e., something that has a next element to process and a rest afterwards
 class (Functor t, Foldable t) => TokenStream t where
@@ -44,26 +44,22 @@ instance TokenStream (Either a) where
     nil = Left undefined
     cons a _ = Right a
 
--- | Deprecated version of `sDrop`
-skipN :: (TokenStream s) => Int -> s a -> s a
-skipN = sDrop 
-
 -- | `TokenStream` version of `drop` 
-sDrop ::  (TokenStream s) => Int -> s a -> s a
-sDrop 0 x = x
-sDrop n x = rest $ sDrop (n-1) x
+drop ::  (TokenStream s) => Int -> s a -> s a
+drop 0 x = x
+drop n x = rest $ drop (n-1) x
 
 -- | `TokenStream` version of `zip`
-sZip :: (TokenStream s) => s a -> s b -> s (a,b)
-sZip = sZipWith (,)
+zip :: (TokenStream s) => s a -> s b -> s (a,b)
+zip = zipWith (,)
 
 -- | `TokenStream` version of `zipWith`
-sZipWith :: (TokenStream s) => (a -> b -> c) -> s a -> s b -> s c
-sZipWith f l r | null l || null r = nil
-               | otherwise      = f (top l) (top r) `cons` sZipWith f (rest l) (rest r)
+zipWith :: (TokenStream s) => (a -> b -> c) -> s a -> s b -> s c
+zipWith f l r | null l || null r = nil
+               | otherwise      = f (top l) (top r) `cons` zipWith f (rest l) (rest r)
 
 -- | `TokenStream` version of `filter`
-sFilter :: (TokenStream s) => (a -> Bool) -> s a -> s a
-sFilter c x | null x = nil
-            | c (top x) = top x `cons` sFilter c (rest x)
-            | otherwise = sFilter c (rest x)
+filter :: (TokenStream s) => (a -> Bool) -> s a -> s a
+filter c x | null x = nil
+            | c (top x) = top x `cons` filter c (rest x)
+            | otherwise = filter c (rest x)

@@ -7,7 +7,8 @@ import Control.Monad
 import Data.Char
 
 import Text.LParse.Parser
-import Text.LParse.TokenStream
+import qualified Text.LParse.TokenStream as T
+import Text.LParse.TokenStream (TokenStream,top,rest,nil,cons)
 
 
 -- | A parser that always succeeds, parses nothing and returns unit
@@ -36,7 +37,7 @@ tokenReturn = tokenParse id
 
 -- | Succeeds exactly if the input begins with the given sequence. On success, consumes that sequence
 consume :: (Eq t, Show (s t), TokenStream s) => s t -> Parser r (s t) ()
-consume pre = cParse ((&&) <$> (and . sZipWith (==) pre) <*> ((>= length pre) . length)) (pParse (sDrop (length pre)) noop) ("Expected " ++ show pre)
+consume pre = cParse ((&&) <$> (and . T.zipWith (==) pre) <*> ((>= length pre) . length)) (pParse (T.drop (length pre)) noop) ("Expected " ++ show pre)
 
 -- | Consumes exactly the given input and then returns the given constant result
 consumeReturn :: (Eq t, Show (s t), TokenStream s) => s t -> a -> Parser r (s t) a
@@ -119,7 +120,7 @@ skip s = skipBy (not . (`elem` s))
 
 -- | Same as skip, but with a custom comparator
 skipBy :: (TokenStream s) => (t -> Bool) -> Parser r (s t) a -> Parser r (s t) a
-skipBy f = pParse (sFilter f)
+skipBy f = pParse (T.filter f)
 
 -- | Skips standard whitespace characters from a String input
 skipWhitespace :: Parser r String a -> Parser r String a
