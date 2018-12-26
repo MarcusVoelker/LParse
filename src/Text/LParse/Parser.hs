@@ -1,7 +1,7 @@
 {-|
 Module      : Text.LParse.Parser
 Description : Core for LParse
-Copyright   : (c) Marcus Völker, 2017
+Copyright   : (c) Marcus Völker, 2017-2018
 License     : MIT
 Maintainer  : marcus.voelker@rwth-aachen.de
 
@@ -77,7 +77,7 @@ parse p s = run (pFunc p s) . (. fst)
 doParse :: Parser (Either String a) t a -> t -> Either String a
 doParse p s = invoke (fst <$> pFunc p s)
 
--- | Same as @parse@, but giving back the results via @Either@
+-- | Same as @parse@, but assuming the parsing succeeds, hard failing via @undefined@ otherwise
 forceParse :: Parser a t a -> t -> a
 forceParse p s = parse p s id undefined 
 

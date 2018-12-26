@@ -1,3 +1,12 @@
+{-|
+Module      : Text.LParse.Metaparser
+Description : Underlying data structure for sequential parsing
+Copyright   : (c) Marcus Völker, 2018
+License     : MIT
+Maintainer  : marcus.voelker@rwth-aachen.de
+
+This module contains the Metaparser, which is a parser that parses a grammar in EBNF and returns a parser that parses that grammar into an AST
+-}
 module Text.LParse.Metaparser (specParse,metaParser,AST) where
 
 import Control.Applicative

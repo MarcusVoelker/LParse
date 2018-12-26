@@ -1,3 +1,15 @@
+{-|
+Module      : Text.LParse.Prebuilt
+Description : Core for LParse
+Copyright   : (c) Marcus Völker, 2017-2018
+License     : MIT
+Maintainer  : marcus.voelker@rwth-aachen.de
+
+This module contains prebuilt parsers that fulfill a certain job (formerly in @Text.LParse.Atomics@) and parser transformers that one or more parsers and modify/combine them in a certain way (formerly in @Text.LParse.Transformers@)
+
+Some of these parsers depend on their input being given in the form of a @TokenStream@.
+-}
+
 module Text.LParse.Prebuilt where
 
 

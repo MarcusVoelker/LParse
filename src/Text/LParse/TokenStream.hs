@@ -1,7 +1,7 @@
 {-|
 Module      : Text.LParse.TokenStream
 Description : Underlying data structure for sequential parsing
-Copyright   : (c) Marcus Völker, 2017
+Copyright   : (c) Marcus Völker, 2017-2018
 License     : MIT
 Maintainer  : marcus.voelker@rwth-aachen.de
 

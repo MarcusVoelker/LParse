@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.3
+
+Highlights:
+
+* Adding `Metaparser`, a parser that constructs a parser from a grammar similar to EBNF
+
+### 0.3.0
+
+* Merged `Atomics` and `Transformers` into `Prebuilt`
+* Removed deprecated `skipN`
+* Renamed `TokenStream` functions to share the names of `Prelude` functions on lists
+* Added `Metaparser`, a parser parsing a grammar into a parser
+* Added `pfix`, a fixed point combinator for parsers depending on their own result
+* Added convenience function `wrap` to `DCont`
+* Added `forceParse` function to parse assuming success
+* Added `surround` parser transformer for parsing parenthesised expressions
+
 ## 0.2
 
 Highlights:
