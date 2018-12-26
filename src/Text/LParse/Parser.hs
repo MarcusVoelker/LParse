@@ -50,6 +50,7 @@ instance MonadPlus (Parser r t) where
     mzero = empty
     mplus = (<|>)
 
+-- | @MonadFix@-analogue for @Parser@, using the @DCont@ function @dfix@
 pfix :: (a -> Parser (Either String (a,t)) t a) -> Parser r t a
 pfix f = Parser (dfix . flip (pFunc . f . fst . fromRight undefined)) 
 

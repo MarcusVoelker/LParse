@@ -29,6 +29,7 @@ instance Monad (DCont r e) where
     return x = DCont (\f _ -> f x)
     c >>= f = DCont (\btr etr -> run c (\x -> run (f x) btr etr) etr)
 
+-- | @MonadFix@-analogue for DoubleContinuations. Since it doesn't fit in the signature of @mfix@, it is defined separately
 dfix :: (Either e a -> DCont (Either e a) e a) -> DCont r e a
 dfix f = let ea = run (f ea) Right Left in wrap ea
 
