@@ -22,30 +22,27 @@ import Text.LParse.Parser
 import qualified Text.LParse.TokenStream as T
 import Text.LParse.TokenStream (TokenStream,top,rest,nil,cons)
 
+-- * Atomic Parsers
+
+-- ** Empty Parsers
 
 -- | A parser that always succeeds, parses nothing and returns unit
 noop :: Parser r t ()
 noop = return ()
 
--- | A parser that consumes the whole input and returns it unchanged
-full :: Parser r [t] [t]
-full = many tokenReturn
-
--- | A parser that consumes the whole input and discards it, successfully
-discard :: Parser r [t] ()
-discard = void full
+-- | Succeeds if the first token matches the given function, without consuming it
+peek :: (TokenStream s) => (t -> Bool) -> String -> Parser r (s t) ()
+peek c = cParse (c . top) noop
 
 -- | A parser that parses nothing, but only succeeds if the input is empty
 eoi :: Parser r [t] ()
 eoi = cParse null noop "Input not fully consumed"
 
--- | Extracts the first token from the input and applies the given function to it
-tokenParse :: (TokenStream s) => (t -> a) -> Parser r (s t) a
-tokenParse f = Parser (\s -> DCont (\btr etr -> if null s then etr "Unexpected EOI" else btr (f $ top s,rest s)))
+-- *** Consumers
 
--- | Consumes and returns the first token of the input
-tokenReturn :: (TokenStream s) => Parser r (s a) a
-tokenReturn = tokenParse id
+-- | A parser that consumes the whole input and discards it, successfully
+discard :: Parser r [t] ()
+discard = void full
 
 -- | Succeeds exactly if the input begins with the given sequence. On success, consumes that sequence
 consume :: (Eq t, Show (s t), TokenStream s) => s t -> Parser r (s t) ()
@@ -62,6 +59,30 @@ consumeSingle t = cParse (\s -> not (null s) && top s == t) (pParse rest noop) (
 -- | Consumes exactly the given token and then returns the given constant result
 consumeSReturn :: (Eq t, Show t, TokenStream s) => t -> a -> Parser r (s t) a
 consumeSReturn t a = consumeSingle t >> return a
+
+-- ** Input Transformers
+
+-- *** Identity Transformers
+
+-- | Consumes and returns the first token of the input
+tokenReturn :: (TokenStream s) => Parser r (s a) a
+tokenReturn = tokenParse id
+
+-- | A parser that consumes the whole input and returns it unchanged
+full :: Parser r [t] [t]
+full = many tokenReturn
+
+-- *** Arbitrary transformers
+
+-- | Extracts the first token from the input and applies the given function to it
+tokenParse :: (TokenStream s) => (t -> a) -> Parser r (s t) a
+tokenParse f = Parser (\s -> DCont (\btr etr -> if null s then etr "Unexpected EOI" else btr (f $ top s,rest s)))
+
+-- | A parser that always succeeds with the given function
+success :: (t -> (a,t)) -> Parser r t a
+success = Parser . (return .)
+
+-- ** Entity Parsers
 
 -- | Extracts the first digit and returns it
 digit :: Parser r String Integer
@@ -83,14 +104,6 @@ integer = foldl (\x y -> x*10+y) 0 <$> some digit
 sInteger :: Parser r String Integer
 sInteger = (\m i -> case m of (Just _) -> -i; Nothing -> i) <$> try (consumeSingle '-') <*> integer
 
--- | Succeeds if the first token matches the given function, without consuming it
-peek :: (TokenStream s) => (t -> Bool) -> String -> Parser r (s t) ()
-peek c = cParse (c . top) noop
-
--- | A parser that always succeeds with the given function
-success :: (t -> (a,t)) -> Parser r t a
-success = Parser . (return .)
-
 -- | Parses an integer by removing a single digit in the given base from it. Zero is considered to have no digits
 bDigit :: Integer -> Parser r Integer Integer
 bDigit b = cParse (> 0) (success (\i -> (i `mod` b,i `div` b))) "Empty number!"
@@ -99,11 +112,19 @@ bDigit b = cParse (> 0) (success (\i -> (i `mod` b,i `div` b))) "Empty number!"
 bDigits :: Integer -> Parser r Integer [Integer]
 bDigits b = many $ bDigit b
 
-------------------------- Transformers
+-- * Parser Transformers
 
--- | Executes components in the same order as @(>>)@, but returning the first rather than the second monad. Note that @a >> b /= b << a@
-(<<) :: (Monad m) => m a -> m b -> m a
-a << b = a >>= ((b >>) . return)
+-- ** Single Parser Transformers
+
+-- | Tries to run the given parser, giving back Just result or Nothing
+try :: Parser r t a -> Parser r t (Maybe a)
+try p = (Just <$> p) <|> return Nothing
+
+-- | Parses a character before and a character after the given parser, useful for parentheses
+surround :: (Eq t, Show t, TokenStream s) => [t] -> Parser r (s t) a -> Parser r (s t) a
+surround [l,r] p = consumeSingle l >> p << consumeSingle r
+
+-- *** Conditional Transformers
 
 -- | Takes a condition the parser's input has to fulfil in order for the parser to succeed
 cParse :: (t -> Bool) -> Parser r t a -> String -> Parser r t a
@@ -113,18 +134,11 @@ cParse c p err = Parser (\s -> if c s then pFunc p s else throw err)
 nParse :: (TokenStream s, Eq (s t)) => (t -> Bool) -> Parser r (s t) a -> String -> Parser r (s t) a
 nParse c = cParse (\s -> nil /= s && c (top s))
 
+-- *** Input-modifying Transformers
+
 -- | Transforms the input before applying the parser
 pParse :: (t -> t) -> Parser r t a -> Parser r t a
 pParse f p = Parser (pFunc p . f)
-
--- | Takes a parser that consumes separators and a parser that consumes the desired data and returns a non-empty list of desired data (separated by the separator in source)
--- For example: @sepSome (consume " ") word@ applied to @"a banana is tasty"@ returns @["a","banana","is","tasty"]@
-sepSome :: Parser r t () -> Parser r t a -> Parser r t [a]
-sepSome sep p = ((:) <$> p <*> many (sep >> p)) <|> fmap return p
-
--- | Same as @sepSome@, but allows empty lists
-sepMany :: Parser r t () -> Parser r t a -> Parser r t [a]
-sepMany sep p = sepSome sep p <|> return []
 
 -- | Removes all tokens from the given list from the input
 skip :: (Eq t, TokenStream s) => [t] -> Parser r (s t) a -> Parser r (s t) a
@@ -142,10 +156,19 @@ skipWhitespace = skipBy (not . isSpace)
 replace :: (TokenStream s) => (t -> t) -> Parser r (s t) a -> Parser r (s t) a
 replace f p = Parser (pFunc p . (\x -> f (top x) `cons` rest x))
 
--- | Tries to run the given parser, giving back Just result or Nothing
-try :: Parser r t a -> Parser r t (Maybe a)
-try p = (Just <$> p) <|> return Nothing
+-- ** Parser Combinators
 
--- | Parses a character before and a character after the given parser, useful for parentheses
-surround :: (Eq t, Show t, TokenStream s) => [t] -> Parser r (s t) a -> Parser r (s t) a
-surround [l,r] p = consumeSingle l >> p << consumeSingle r
+-- | Executes components in the same order as @(>>)@, but returning the first rather than the second monad. Note that @a >> b /= b << a@
+(<<) :: (Monad m) => m a -> m b -> m a
+a << b = a >>= ((b >>) . return)
+
+-- *** @Alternative@ variants
+
+-- | Takes a parser that consumes separators and a parser that consumes the desired data and returns a non-empty list of desired data (separated by the separator in source)
+-- For example: @sepSome (consume " ") word@ applied to @"a banana is tasty"@ returns @["a","banana","is","tasty"]@
+sepSome :: Parser r t () -> Parser r t a -> Parser r t [a]
+sepSome sep p = ((:) <$> p <*> many (sep >> p)) <|> fmap return p
+
+-- | Same as @sepSome@, but allows empty lists
+sepMany :: Parser r t () -> Parser r t a -> Parser r t [a]
+sepMany sep p = sepSome sep p <|> return []
