@@ -24,6 +24,10 @@ throw :: e  -- ^ The error to return
     -> DCont r e a
 throw x = DCont (\_ g -> g x)
 
+-- | Takes a continuation. If it failed, the error is processed and wrapped in a new continuation. If it succeeded, it is given back
+catch :: (e -> DCont r e a) -> DCont r e a -> DCont r e a
+catch c i = DCont (\atr etr -> run i atr (\e -> run (c e) atr etr))
+
 -- | Binding a Continuation means running it, then feeding the result into f to generate a new continuation, and running that
 instance Monad (DCont r e) where
     return x = DCont (\f _ -> f x)
