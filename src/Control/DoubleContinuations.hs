@@ -49,7 +49,7 @@ instance Applicative (DCont r e) where
 -- | An empty alternative just fails with an undefined error. Branching means first trying one, and in case of failure, the other
 instance Alternative (DCont r e) where
     empty = throw undefined
-    p1 <|> p2 = DCont (\atr etr -> run p1 atr (\_ -> run p2 atr etr))
+    p1 <|> p2 = catch (const p2) p1
 
 -- | Convenience function to run a computation and put the result into an Either (with Left being the error and Right being the success)
 invoke :: DCont (Either e a) e a -> Either e a
