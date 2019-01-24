@@ -32,7 +32,7 @@ instance Show AST where
     show (SLeaf s) = s
     show EOI = "$"
 
-escaped :: Parser r String Token
+escaped :: Parser r e String Token
 escaped = consumeSReturn 'i' Integer
     <|> consumeSReturn 'd' Digit
     <|> consumeSReturn 'w' Word
@@ -46,10 +46,10 @@ escaped = consumeSReturn 'i' Integer
     <|> consumeSReturn ')' (Literal ')')
     <|> consumeSReturn '$' (Literal '$')
 
-charclass :: Parser r String Token
-charclass = CharClass <$> some (nParse (/=']') tokenReturn "Expected character")
+charclass :: Parser r e String Token
+charclass = CharClass <$> some (nParse (/=']') tokenReturn (UnexpectedToken " character"))
 
-simpleSpecial :: Parser r String Token
+simpleSpecial :: Parser r e String Token
 simpleSpecial = consumeSReturn '*' Star
     <|> consumeSReturn '+' Plus
     <|> consumeSReturn '?' May
@@ -60,13 +60,13 @@ simpleSpecial = consumeSReturn '*' Star
     <|> consumeReturn "::=" Is
     <|> consumeSReturn ';' Sep
 
-whitespace :: Parser r String Token
-whitespace = some (nParse isSpace tokenReturn "Expected Space") >> return Whitespace
+whitespace :: Parser r e String Token
+whitespace = some (nParse isSpace tokenReturn (UnexpectedToken " space")) >> return Whitespace
 
-ruleName :: Parser r String Token
+ruleName :: Parser r e String Token
 ruleName = consumeSingle '%' >> (RuleName <$> word)
 
-metaTokenizer :: Parser r String [Token]
+metaTokenizer :: Parser r e String [Token]
 metaTokenizer = many (
     (consumeSingle '\\' >> escaped)
     <|> surround "[]" charclass
@@ -76,16 +76,16 @@ metaTokenizer = many (
     <|> (Literal <$> tokenReturn)
     )
 
-iLeafParser :: Parser r [Token] (Parser r' String AST)
+iLeafParser :: Parser r e [Token] (Parser r' e String AST)
 iLeafParser = consumeSReturn Integer (ILeaf <$> integer)
 
-dLeafParser :: Parser r [Token] (Parser r' String AST)
+dLeafParser :: Parser r e [Token] (Parser r' e String AST)
 dLeafParser = consumeSReturn Digit (ILeaf <$> digit)
 
-sLeafParser :: Parser r [Token] (Parser r' String AST)
+sLeafParser :: Parser r e [Token] (Parser r' e String AST)
 sLeafParser = consumeSReturn Word (SLeaf <$> word)
 
-eoiParser :: Parser r [Token] (Parser r' String AST)
+eoiParser :: Parser r e [Token] (Parser r' e String AST)
 eoiParser = consumeSReturn Eoi (eoi >> return EOI)
 
 isRuleName :: Token -> Bool
@@ -95,12 +95,12 @@ isRuleName _ = False
 getRuleName :: Token -> String
 getRuleName (RuleName s) = s
 
-subRuleParser :: M.Map String (Parser r' String AST) -> Parser r [Token] (Parser r' String AST)
-subRuleParser m = nParse isRuleName (tokenParse ((m M.!) . getRuleName)) "Expected RuleName"
+subRuleParser :: M.Map String (Parser r' e String AST) -> Parser r e [Token] (Parser r' e String AST)
+subRuleParser m = nParse isRuleName (tokenParse ((m M.!) . getRuleName)) (UnexpectedToken "rule name")
 
-charClassCharParser :: String -> Parser r String Char
-charClassCharParser (c:s) | c == '^' = nParse (not . (`elem` s)) tokenReturn ("Expected not [" ++ s ++ "]")
-charClassCharParser s = nParse (`elem` s) tokenReturn ("Expected [" ++ s ++ "]")
+charClassCharParser :: String -> Parser r e String Char
+charClassCharParser (c:s) | c == '^' = nParse (not . (`elem` s)) tokenReturn (UnexpectedToken $ "not [" ++ s ++ "]")
+charClassCharParser s = nParse (`elem` s) tokenReturn (UnexpectedToken $ "[" ++ s ++ "]")
 
 isCharClass :: Token -> Bool
 isCharClass (CharClass _) = True
@@ -109,8 +109,8 @@ isCharClass _ = False
 getCharClass :: Token -> String
 getCharClass (CharClass s) = s
 
-charClassParser :: Parser r [Token] (Parser r' String AST)
-charClassParser = nParse isCharClass (tokenParse (fmap (SLeaf . return) . charClassCharParser . getCharClass)) "Expected character class"
+charClassParser :: Parser r e [Token] (Parser r' e String AST)
+charClassParser = nParse isCharClass (tokenParse (fmap (SLeaf . return) . charClassCharParser . getCharClass)) (UnexpectedToken "character class")
 
 isLiteral :: Token -> Bool
 isLiteral (Literal _) = True
@@ -119,13 +119,13 @@ isLiteral _ = False
 getLiteral :: Token -> Char
 getLiteral (Literal s) = s
 
-parseLiteral :: Parser r [Token] Char
-parseLiteral = nParse isLiteral (tokenParse getLiteral) "Expected Literal"
+parseLiteral :: Parser r e [Token] Char
+parseLiteral = nParse isLiteral (tokenParse getLiteral) (UnexpectedToken "literal")
 
-charParser :: Parser r [Token] (Parser r' String AST)
+charParser :: Parser r e [Token] (Parser r' e String AST)
 charParser = fmap (SLeaf . return) . (\c -> consumeSReturn c c) <$> parseLiteral
 
-atomParser :: M.Map String (Parser r' String AST) -> Parser r [Token] (Parser r' String AST)
+atomParser :: M.Map String (Parser r' e String AST) -> Parser r e [Token] (Parser r' e String AST)
 atomParser m = iLeafParser
     <|> dLeafParser
     <|> sLeafParser
@@ -134,10 +134,10 @@ atomParser m = iLeafParser
     <|> subRuleParser m
     <|> charParser
 
-starFreeParser :: M.Map String (Parser r' String AST) -> Parser r [Token] (Parser r' String [AST])
+starFreeParser :: M.Map String (Parser r' e String AST) -> Parser r e [Token] (Parser r' e String [AST])
 starFreeParser m = surround [LParen,RParen] (cfexParser m) <|> (fmap return <$> atomParser m)
 
-concatFreeParser :: M.Map String (Parser r' String AST) -> Parser r [Token] (Parser r' String [AST]) 
+concatFreeParser :: M.Map String (Parser r' e String AST) -> Parser r e [Token] (Parser r' e String [AST]) 
 concatFreeParser m = do
     sf <- starFreeParser m
     (consumeSingle Star >> return (concat <$> many sf))
@@ -145,35 +145,35 @@ concatFreeParser m = do
         <|> (consumeSingle May >> return (concat . maybeToList <$> try sf))
         <|> return sf
 
-orFreeParser :: M.Map String (Parser r' String AST) -> Parser r [Token] (Parser r' String [AST])
+orFreeParser :: M.Map String (Parser r' e String AST) -> Parser r e [Token] (Parser r' e String [AST])
 orFreeParser m = fmap concat . sequenceA <$> some (concatFreeParser m)
 
-cfexParser :: M.Map String (Parser r' String AST) -> Parser r [Token] (Parser r' String [AST])
+cfexParser :: M.Map String (Parser r' e String AST) -> Parser r e [Token] (Parser r' e String [AST])
 cfexParser m = foldl1 (<|>) <$> sepSome (consumeSingle Or) (orFreeParser m)
 
-ruleParser :: M.Map String (Parser r' String AST) -> Parser r [Token] (String,Parser r' String AST)
-ruleParser m = (\s as-> (s,Node s <$> as)) <$> (many (nParse isLiteral (tokenParse getLiteral) "Expected Literal") << consumeSingle Is) <*> cfexParser m
+ruleParser :: M.Map String (Parser r' e String AST) -> Parser r e [Token] (String,Parser r' e String AST)
+ruleParser m = (\s as-> (s,Node s <$> as)) <$> (many (nParse isLiteral (tokenParse getLiteral) (UnexpectedToken "literal")) << consumeSingle Is) <*> cfexParser m
 
-rulesetParser :: M.Map String (Parser r' String AST) -> Parser r [Token] (M.Map String (Parser r' String AST))
+rulesetParser :: M.Map String (Parser r' e String AST) -> Parser r e [Token] (M.Map String (Parser r' e String AST))
 rulesetParser m = M.fromList<$> sepMany (consumeSingle Sep) (ruleParser m)
 
-rulesetLoop :: Parser r [Token] (M.Map String (Parser r' String AST))
+rulesetLoop :: Parser r e [Token] (M.Map String (Parser r' e String AST))
 rulesetLoop = pfix rulesetParser
 
-combine :: Maybe (M.Map String (Parser r' String AST)) -> Parser r [Token] (Parser r' String [AST])
+combine :: Maybe (M.Map String (Parser r' e String AST)) -> Parser r e [Token] (Parser r' e String [AST])
 combine Nothing = cfexParser M.empty
 combine (Just rs) = cfexParser rs 
 
-fullParser :: Parser r [Token] (Parser r' String AST)
+fullParser :: Parser r e [Token] (Parser r' e String AST)
 fullParser = try (rulesetLoop << consumeSingle Sep) >>= (fmap (fmap (Node "_")) . combine)
 
-parserParser :: Parser r [Token] (Parser r' String AST)
+parserParser :: Parser r e [Token] (Parser r' e String AST)
 parserParser = fullParser << eoi
 
 -- | Parser that takes a grammar and returns a parser that parses that grammar into an @AST@
-metaParser :: Parser r String (Parser r' String AST)
+metaParser :: Parser r e String (Parser r' e String AST)
 metaParser = metaTokenizer >>> skip [Whitespace] parserParser
 
 -- | Convenience function chaining creation and usage of the @metaParser@ into a single invocation.
-specParse :: String -> String -> Either String AST
+specParse :: String -> String -> Either (ParserError e) AST
 specParse g i = doParse metaParser g >>= (`doParse` i)

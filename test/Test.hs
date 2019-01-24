@@ -12,16 +12,16 @@ import Data.List
 import Data.Maybe
 import System.Exit (exitSuccess,exitFailure)
 
-bracks :: Parser r String ()
+bracks :: Parser r () String ()
 bracks = surround "()" nesting
     <|> surround "[]" nesting
     <|> surround "{}" nesting
     <|> surround "<>" nesting
 
-nesting :: Parser r String ()
+nesting :: Parser r () String ()
 nesting = void $ many bracks
 
-succCases :: [(Parser r String (),String)]
+succCases :: [(Parser r () String (),String)]
 succCases = [
     (noop,""),
     (eoi,""),
@@ -38,7 +38,7 @@ succCases = [
     (try word >> integer >> eoi, "super123")
     ]
 
-failCases :: [(Parser r String (),String)]
+failCases :: [(Parser r () String (),String)]
 failCases = [
     (eoi,"foo"),
     (consume "prefix", "freepix"),
@@ -47,16 +47,16 @@ failCases = [
     (digit >> eoi, "42"),
     (word >> eoi, "banana bread"),
     (nesting >> eoi, "({(})[])"),
-    (void $ nParse (=='1') integer "Expected '1'", "234")
+    (void $ nParse (=='1') integer (UnexpectedToken "1"), "234")
     ]
 
-stringCases :: [(Parser r String String, String, String)]
+stringCases :: [(Parser r () String String, String, String)]
 stringCases = [
     (word,"sufficient example","sufficient"),
     (integer >>> (show <$> bDigits 2), "19", "[1,1,0,0,1]")
     ]
 
-intCases :: [(Parser r String Integer, String, Integer)]
+intCases :: [(Parser r () String Integer, String, Integer)]
 intCases = [
     (integer,"123 is a nice number",123),
     (digit,"123 is a nice number",1),
@@ -64,7 +64,7 @@ intCases = [
     (integer >>> (sum <$> bDigits 2), "19", 3),
     (integer >>> (foldr (\x y -> x + y * 2) 0 <$> bDigits 2), "19", 19),
     ((\x y -> x*10+y) <$> sInteger <*> (consumeSingle ' ' >> sInteger), "-123 123", (-123*10) + 123),
-    (nParse (=='1') integer "Expected '1'", "123", 123)
+    (nParse (=='1') integer (UnexpectedToken "1"), "123", 123)
     ]
 
 metaCases :: [(String, String, String)]
@@ -82,11 +82,11 @@ metaCases =
     , ("p::=\\(%e\\);b::=\\[%e\\];c::={%e};a::=<%e>;e::=(%p|%b|%c|%a)*;%e$","({[]}()[[]])","_(e(p((,e(c({,e(b([,e(),])),}),p((,e(),)),b([,e(b([,e(),])),])),))),$)")
     ]
 
-runTests :: [(Parser (Either String a) t a,t)] -> [Either String a]
-runTests = map (uncurry doParse)
+runTests :: (Show e) => [(Parser (Either (ParserError e) a) e t a,t)] -> [Either String a]
+runTests = map (either (Left . show) Right . uncurry doParse)
 
-eqTest :: (Eq a, Show a) => (Parser (Either String ()) t a, t, a) -> Either String ()
-eqTest (p,i,e) = parse p i (\r -> if r == e then Right () else Left ("Expected " ++ show e ++ ", but got " ++ show r)) (\e -> Left $ "Parser error: " ++ e)
+eqTest :: (Eq a, Show a, Show e) => (Parser (Either String ()) e t a, t, a) -> Either String ()
+eqTest (p,i,e) = parse p i (\r -> if r == e then Right () else Left ("Expected " ++ show e ++ ", but got " ++ show r)) (\e -> Left $ "Parser error: " ++ show e)
 
 succTest :: [Either String a] -> IO ()
 succTest res = unless (all isRight res) $ mapM_ putStrLn (lefts res) >> exitFailure
@@ -95,7 +95,7 @@ failTest :: [Either String a] -> IO ()
 failTest res = unless (all isLeft res) $ putStrLn "Fail Test Succeeded" >> exitFailure
 
 metaTest :: (String,String,String) -> Either String AST
-metaTest (g,i,a) = either (\a -> Left ("Case " ++ show (g,i)  ++ ": " ++ a)) (\ast -> if show ast == a then Right ast else Left ("Expected AST " ++ a ++ " but got " ++ show ast)) (specParse g i)
+metaTest (g,i,a) = either (\e -> Left ("Case " ++ show (g,i)  ++ ": " ++ show (e :: ParserError ()))) (\ast -> if show ast == a then Right ast else Left ("Expected AST " ++ a ++ " but got " ++ show ast)) (specParse g i)
 
 main ::IO ()
 main = do
