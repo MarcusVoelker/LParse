@@ -14,6 +14,7 @@ module Control.DoubleContinuations where
 
 import Control.Applicative
 import Control.Monad
+import Data.Bifunctor
 import Data.Either
 
 -- | The double continuation. Takes two functions, one to invoke if the computation is successful, one if it errors
@@ -25,7 +26,7 @@ throw :: e  -- ^ The error to return
 throw x = DCont (\_ g -> g x)
 
 -- | Takes a continuation. If it failed, the error is processed and wrapped in a new continuation. If it succeeded, it is given back
-catch :: (e -> DCont r e a) -> DCont r e a -> DCont r e a
+catch :: (e -> DCont r e' a) -> DCont r e a -> DCont r e' a
 catch c i = DCont (\atr etr -> run i atr (\e -> run (c e) atr etr))
 
 -- | Binding a Continuation means running it, then feeding the result into f to generate a new continuation, and running that
@@ -40,6 +41,10 @@ dfix f = let ea = run (f ea) Right Left in wrap ea
 -- | via Monad/Functor laws
 instance Functor (DCont r e) where
     fmap = liftM
+
+-- | DCont is a functor both in the result and the error
+instance Bifunctor (DCont r) where
+    bimap g f = catch (throw . g) . fmap f
 
 -- | via Monad/Applicative laws
 instance Applicative (DCont r e) where
