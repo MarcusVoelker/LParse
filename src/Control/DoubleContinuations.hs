@@ -14,6 +14,7 @@ module Control.DoubleContinuations where
 
 import Control.Applicative
 import Control.Monad
+import Control.Monad.Fail
 import Data.Either
 
 -- | The double continuation. Takes two functions, one to invoke if the computation is successful, one if it errors
@@ -28,6 +29,10 @@ throw x = DCont (\_ g -> g x)
 instance Monad (DCont r e) where
     return x = DCont (\f _ -> f x)
     c >>= f = DCont (\btr etr -> run c (\x -> run (f x) btr etr) etr)
+
+-- | Failing a Continuation means returning a continuation that always fails.
+instance MonadFail (DCont r e) where
+    fail _ = empty
 
 -- | @MonadFix@-analogue for DoubleContinuations. Since it doesn't fit in the signature of @mfix@, it is defined separately
 dfix :: (Either e a -> DCont (Either e a) e a) -> DCont r e a

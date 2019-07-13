@@ -6,6 +6,10 @@ Highlights:
 
 * Adding `Metaparser`, a parser that constructs a parser from a grammar similar to EBNF
 
+### 0.3.1
+
+* Adding `MonadFail` instances to `Parser` and `DCont`
+
 ### 0.3.0
 
 * Merged `Atomics` and `Transformers` into `Prebuilt`

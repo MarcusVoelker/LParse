@@ -15,6 +15,7 @@ import Control.Applicative
 import Control.Arrow
 import qualified Control.Category as C
 import Control.Monad
+import Control.Monad.Fail
 
 import Data.Either
 import Data.List
@@ -49,6 +50,10 @@ instance Monad (Parser r t) where
 instance MonadPlus (Parser r t) where
     mzero = empty
     mplus = (<|>)
+
+-- | Pattern match failure via parsing failure
+instance MonadFail (Parser r t) where
+    fail s = Parser (const $ throw s)
 
 -- | @MonadFix@-analogue for @Parser@, using the @DCont@ function @dfix@
 pfix :: (a -> Parser (Either String (a,t)) t a) -> Parser r t a
