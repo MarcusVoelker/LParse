@@ -16,7 +16,7 @@ These semantics are modelled with Monads and Alternatives, respectively, to make
 * `(,) <$> p1 <*> p2` runs `p1` and `p2` in succession and gives the results of `p1` and `p2` as a pair
 * `p1 <|> p2` runs `p1`. On a success, its result is returned, on a fail, `p2` is run. On a success, its result is returned, on a failure, the whole parser fails
 
-The parser can be built from scratch by constructing a parser object with the appropriate function, but a variety of common atomic parsers and parser transformers are provided in `Text.LParse.Atomics` and `Text.LParse.Transformers`, respectively.
+The parser can be built from scratch by constructing a parser object with the appropriate function, but a variety of common atomic parsers and parser transformers are provided in `Text.LParse.Prebuilt`.
 
 The above construction is referred to as _horizontal composition_, i.e., running parsers successively on the same input.
 The dual concept to this we refer to as _vertical composition_, where the result of one parser is fed into the next one as an input. An application for this could be one parser `lex` that transforms a string into a list of tokens (a lexer) and a second parser `par` that transforms a list of tokens into a syntax tree. Then we could join these to create a parser that directly transforms a string into a syntax tree as `lex >>> par`
